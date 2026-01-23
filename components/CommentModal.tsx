@@ -102,14 +102,18 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         content: newComment.trim(),
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       setNewComment('');
       void loadComments();
-    } catch (error) {
+    } catch (error: any) {
       // eslint-disable-next-line no-console
       console.error('Error adding comment:', error);
-      alert('Failed to add comment');
+      const errorMessage = error?.message || 'Unknown error';
+      alert(`Failed to add comment: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }

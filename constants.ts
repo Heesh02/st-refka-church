@@ -84,11 +84,12 @@ export const TRANSLATIONS = {
     categories: {
       All: 'All',
       Sermons: 'Sermons',
-      Hymns: 'Hymns',
       Liturgies: 'Liturgies',
       'Bible Study': 'Bible Study',
-      Kids: 'Kids',
-      Events: 'Events'
+      'El Hekaya': 'El Hekaya w Mafiha',
+      'Youth Meeting': 'Youth Meeting',
+      'Ma3loma': "Ma3loma 3al Mashy",
+      Kids: 'Kids'
     },
     // Add Media Modal
     addNewContent: 'Add New Content',
@@ -99,13 +100,41 @@ export const TRANSLATIONS = {
     addToLibrary: 'Add to Library',
     invalidYoutubeUrl: 'Invalid YouTube URL',
     videoTitlePlaceholder: 'Video title',
-    descriptionPlaceholder: 'Brief description...'
+    descriptionPlaceholder: 'Brief description...',
+    // User Management
+    users: 'Users',
+    userManagement: 'User Management',
+    searchUsers: 'Search by name or email...',
+    noUsersFound: 'No users found',
+    admin: 'Admin',
+    user: 'User',
+    promoteToAdmin: 'Promote to Admin',
+    demoteToUser: 'Demote to User',
+    roleUpdated: 'Role updated successfully',
+    totalUsers: 'Total Users',
+    deleteUser: 'Delete User',
+    deleteUserConfirm: 'Are you sure you want to delete this user? This action cannot be undone.',
+    userDeleted: 'User deleted successfully',
+    // Pagination & Sorting
+    sortBy: 'Sort by',
+    newest: 'Newest',
+    oldest: 'Oldest',
+    mostViewed: 'Most Viewed',
+    previous: 'Previous',
+    next: 'Next',
+    pageOf: 'of',
+    // Favorites
+    favorites: 'Favorites',
+    addToFavorites: 'Add to Favorites',
+    removeFromFavorites: 'Remove from Favorites',
+    noFavorites: 'No favorites yet',
+    noFavoritesDesc: 'Videos you save will appear here.'
   },
   ar: {
     dashboard: 'لوحة التحكم',
     mediaLibrary: 'مكتبة الوسائط',
     bibleStudies: 'دراسات الكتاب المقدس',
-    churchEvents: 'أحداث الكنيسة',
+    churchEvents: 'مناسبات الكنيسة',
     settings: 'الإعدادات',
     signOut: 'تسجيل الخروج',
     searchPlaceholder: 'ابحث عن العظات والترانيم...',
@@ -131,11 +160,12 @@ export const TRANSLATIONS = {
     categories: {
       All: 'الكل',
       Sermons: 'العظات',
-      Hymns: 'الترانيم',
       Liturgies: 'القداسات',
       'Bible Study': 'دراسة الكتاب المقدس',
-      Kids: 'الأطفال',
-      Events: 'المناسبات'
+      'El Hekaya': 'الحكاية و ما فيها',
+      'Youth Meeting': 'اجتماع الشباب',
+      'Ma3loma': 'معلومة ع الماشي',
+      Kids: 'الأطفال'
     },
     // Add Media Modal
     addNewContent: 'إضافة محتوى جديد',
@@ -146,6 +176,34 @@ export const TRANSLATIONS = {
     addToLibrary: 'إضافة إلى المكتبة',
     invalidYoutubeUrl: 'رابط يوتيوب غير صالح',
     videoTitlePlaceholder: 'عنوان الفيديو',
-    descriptionPlaceholder: 'وصف مختصر...'
+    descriptionPlaceholder: 'وصف مختصر...',
+    // User Management
+    users: 'المستخدمون',
+    userManagement: 'إدارة المستخدمين',
+    searchUsers: 'ابحث بالاسم أو البريد الإلكتروني...',
+    noUsersFound: 'لا يوجد مستخدمون',
+    admin: 'مسؤول',
+    user: 'مستخدم',
+    promoteToAdmin: 'ترقية إلى مسؤول',
+    demoteToUser: 'تخفيض إلى مستخدم',
+    roleUpdated: 'تم تحديث الدور بنجاح',
+    totalUsers: 'إجمالي المستخدمين',
+    deleteUser: 'حذف المستخدم',
+    deleteUserConfirm: 'هل أنت متأكد أنك تريد حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.',
+    userDeleted: 'تم حذف المستخدم بنجاح',
+    // Pagination & Sorting
+    sortBy: 'ترتيب حسب',
+    newest: 'الأحدث',
+    oldest: 'الأقدم',
+    mostViewed: 'الأكثر مشاهدة',
+    previous: 'السابق',
+    next: 'التالي',
+    pageOf: 'من',
+    // Favorites
+    favorites: 'المفضلة',
+    addToFavorites: 'إضافة إلى المفضلة',
+    removeFromFavorites: 'إزالة من المفضلة',
+    noFavorites: 'لا توجد مفضلات بعد',
+    noFavoritesDesc: 'ستظهر الفيديوهات المحفوظة هنا.'
   }
 };

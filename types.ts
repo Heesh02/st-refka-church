@@ -22,9 +22,9 @@ export interface Comment {
   updatedAt: string;
 }
 
-export type Category = 'All' | 'Sermons' | 'Hymns' | 'Liturgies' | 'Bible Study' | 'Kids' | 'Events';
+export type Category = 'All' | 'Sermons' | 'Liturgies' | 'Bible Study' | 'El Hekaya' | 'Youth Meeting' | 'Ma3loma' | 'Kids';
 
-export const CATEGORIES: Category[] = ['All', 'Sermons', 'Hymns', 'Liturgies', 'Bible Study', 'Kids', 'Events'];
+export const CATEGORIES: Category[] = ['All', 'Sermons', 'Liturgies', 'Bible Study', 'El Hekaya', 'Youth Meeting', 'Ma3loma', 'Kids'];
 
 export interface User {
   id: string;

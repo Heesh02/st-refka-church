@@ -66,7 +66,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
       <motion.div
@@ -74,19 +74,19 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         transition={{ type: "spring", duration: 0.5 }}
-        className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl p-6 z-10"
+        className="relative w-full max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-6 z-10"
       >
 
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">{t.addNewContent}</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{t.addNewContent}</h2>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-white transition-colors">
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2">
               <LinkIcon size={14} /> {t.youtubeUrl}
             </label>
             <input
@@ -95,12 +95,12 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2">
               <Type size={14} /> {t.title}
             </label>
             <input
@@ -109,12 +109,12 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t.videoTitlePlaceholder}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2">
               <Film size={14} /> {t.category}
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -124,8 +124,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
                   type="button"
                   onClick={() => setCategory(cat)}
                   className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${category === cat
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
                     }`}
                 >
                   {t.categories[cat]}
@@ -135,12 +135,12 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t.description}</label>
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t.description}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t.descriptionPlaceholder}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all h-24 resize-none"
+              className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all h-24 resize-none"
             />
           </div>
 

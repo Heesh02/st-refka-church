@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, Bell, Filter, Loader2 } from 'lucide-react';
+import { Plus, Search, Bell, Filter, Loader2, ChevronLeft, ChevronRight, Heart, Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
 import { VideoCard } from './components/VideoCard';
@@ -10,6 +10,7 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { ResetPasswordScreen } from './components/ResetPasswordScreen';
 import { EmailConfirmationScreen } from './components/EmailConfirmationScreen';
 import { CommentModal } from './components/CommentModal';
+import { UserManagementScreen } from './components/UserManagementScreen';
 import { Video, CATEGORIES, Category, User, Language, Theme, Notification as NotificationType } from './types';
 import { DUMMY_VIDEOS, TRANSLATIONS } from './constants';
 import { supabase } from './supabaseClient';
@@ -38,6 +39,20 @@ const App: React.FC = () => {
   // Notification States
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  // Mobile Menu
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Sorting & Pagination
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'mostViewed'>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const videosPerPage = 12;
+
+  // Favorites
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('favoriteVideos');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Get Translations
   const t = TRANSLATIONS[language];
@@ -414,8 +429,27 @@ const App: React.FC = () => {
 
   // --- App Logic ---
 
+  // Save favorites to localStorage
+  useEffect(() => {
+    localStorage.setItem('favoriteVideos', JSON.stringify(favoriteIds));
+  }, [favoriteIds]);
+
+  // Toggle favorite
+  const handleToggleFavorite = (videoId: string) => {
+    setFavoriteIds(prev =>
+      prev.includes(videoId)
+        ? prev.filter(id => id !== videoId)
+        : [...prev, videoId]
+    );
+  };
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery, activeTab, sortBy]);
+
   const filteredVideos = useMemo(() => {
-    return videos.filter(video => {
+    let result = videos.filter(video => {
       const matchesCategory = selectedCategory === 'All' || video.category === selectedCategory;
       const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         video.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -423,12 +457,36 @@ const App: React.FC = () => {
       let matchesTab = true;
       if (activeTab === 'studies' && video.category !== 'Bible Study') matchesTab = false;
       if (activeTab === 'events' && video.category !== 'Events') matchesTab = false;
-      // Don't show videos in settings or dashboard tabs
-      if (activeTab === 'settings' || activeTab === 'dashboard') matchesTab = false;
+      if (activeTab === 'favorites') matchesTab = favoriteIds.includes(video.id);
+      // Don't show videos in settings, dashboard, or users tabs
+      if (activeTab === 'settings' || activeTab === 'dashboard' || activeTab === 'users') matchesTab = false;
 
       return matchesCategory && matchesSearch && matchesTab;
     });
-  }, [videos, selectedCategory, searchQuery, activeTab]);
+
+    // Apply sorting
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'mostViewed':
+          return b.views - a.views;
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [videos, selectedCategory, searchQuery, activeTab, sortBy, favoriteIds]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredVideos.length / videosPerPage);
+  const paginatedVideos = useMemo(() => {
+    const startIndex = (currentPage - 1) * videosPerPage;
+    return filteredVideos.slice(startIndex, startIndex + videosPerPage);
+  }, [filteredVideos, currentPage, videosPerPage]);
 
   const handleAddVideo = async (
     newVideoData: Omit<Video, 'id' | 'createdAt' | 'views'>
@@ -603,6 +661,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans flex selection:bg-indigo-500/30 transition-colors duration-500 ease-smooth">
+      {/* Desktop Sidebar */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -611,9 +670,90 @@ const App: React.FC = () => {
         translations={t}
       />
 
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 h-full w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-50 md:hidden overflow-y-auto"
+            >
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src="/st-refka.png" alt="Logo" className="w-10 h-10 rounded-full" />
+                  <span className="font-bold text-sm text-zinc-900 dark:text-white">{t.churchName}</span>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <nav className="p-4 space-y-2">
+                {[
+                  { id: 'library', label: t.mediaLibrary },
+                  { id: 'favorites', label: t.favorites },
+                  { id: 'studies', label: t.bibleStudies },
+                  { id: 'events', label: t.churchEvents },
+                  ...(isAdmin ? [
+                    { id: 'dashboard', label: t.dashboard },
+                    { id: 'users', label: t.users },
+                  ] : []),
+                  { id: 'settings', label: t.settings },
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeTab === item.id
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+              <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all text-left"
+                >
+                  {t.signOut}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Header */}
-        <header className="h-20 px-8 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-500 ease-smooth">
+        <header className="h-20 px-4 md:px-8 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-500 ease-smooth">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white md:hidden"
+          >
+            <Menu size={24} />
+          </button>
+
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             <div className="relative w-full group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-500 transition-colors" size={18} />
@@ -678,7 +818,9 @@ const App: React.FC = () => {
                   {activeTab === 'dashboard' ? t.dashboard :
                     activeTab === 'studies' ? t.bibleStudies :
                       activeTab === 'events' ? t.churchEvents :
-                        activeTab === 'settings' ? t.settings : t.mediaLibrary}
+                        activeTab === 'settings' ? t.settings :
+                          activeTab === 'users' ? t.users :
+                            activeTab === 'favorites' ? t.favorites : t.mediaLibrary}
                 </motion.h1>
                 <p className="text-zinc-500 dark:text-zinc-400">
                   {isAdmin
@@ -702,6 +844,22 @@ const App: React.FC = () => {
                       {t.categories[cat]}
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Sort Dropdown - Show on library and favorites tabs */}
+              {(activeTab === 'library' || activeTab === 'favorites') && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">{t.sortBy}:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'mostViewed')}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="newest">{t.newest}</option>
+                    <option value="oldest">{t.oldest}</option>
+                    <option value="mostViewed">{t.mostViewed}</option>
+                  </select>
                 </div>
               )}
             </div>
@@ -745,26 +903,73 @@ const App: React.FC = () => {
                   </div>
                 )}
 
+                {/* User Management (Admin Only) */}
+                {isAdmin && activeTab === 'users' && (
+                  <UserManagementScreen
+                    translations={t}
+                    currentUserId={currentUser.id}
+                  />
+                )}
+
                 {/* Video Grid */}
-                {activeTab !== 'settings' && activeTab !== 'dashboard' && (
-                  filteredVideos.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-                      {filteredVideos.map((video) => (
-                        <VideoCard
-                          key={video.id}
-                          video={video}
-                          onPlay={setPlayingVideo}
-                          onDelete={isAdmin ? handleDeleteVideo : undefined}
-                          onLike={handleLike}
-                          onComment={handleCommentClick}
-                        />
-                      ))}
-                    </div>
+                {activeTab !== 'settings' && activeTab !== 'dashboard' && activeTab !== 'users' && (
+                  paginatedVideos.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+                        {paginatedVideos.map((video) => (
+                          <VideoCard
+                            key={video.id}
+                            video={video}
+                            onPlay={setPlayingVideo}
+                            onDelete={isAdmin ? handleDeleteVideo : undefined}
+                            onLike={handleLike}
+                            onComment={handleCommentClick}
+                            isFavorite={favoriteIds.includes(video.id)}
+                            onToggleFavorite={handleToggleFavorite}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-4 py-8">
+                          <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          >
+                            <ChevronLeft size={16} />
+                            {t.previous}
+                          </button>
+                          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                            {currentPage} {t.pageOf} {totalPages}
+                          </span>
+                          <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          >
+                            {t.next}
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-zinc-400 dark:text-zinc-500">
-                      <Filter size={48} className="mb-4 opacity-50" />
-                      <p className="text-lg font-medium">{t.noMedia}</p>
-                      <p className="text-sm">{t.noMediaDesc}</p>
+                      {activeTab === 'favorites' ? (
+                        <>
+                          <Heart size={48} className="mb-4 opacity-50" />
+                          <p className="text-lg font-medium">{t.noFavorites}</p>
+                          <p className="text-sm">{t.noFavoritesDesc}</p>
+                        </>
+                      ) : (
+                        <>
+                          <Filter size={48} className="mb-4 opacity-50" />
+                          <p className="text-lg font-medium">{t.noMedia}</p>
+                          <p className="text-sm">{t.noMediaDesc}</p>
+                        </>
+                      )}
                     </div>
                   )
                 )}
