@@ -284,8 +284,13 @@ const App: React.FC = () => {
             createdAt: newItem.created_at,
           };
 
-          // Add to videos list
-          setVideos((prev) => [newVideo, ...prev]);
+          // Add to videos list (prevent duplicates by checking if video already exists)
+          setVideos((prev) => {
+            // Check if video already exists to prevent duplicates
+            const exists = prev.some(v => v.id === newVideo.id);
+            if (exists) return prev;
+            return [newVideo, ...prev];
+          });
 
           // Create notification
           const notification: NotificationType = {
@@ -524,7 +529,13 @@ const App: React.FC = () => {
       createdAt: data.created_at,
     };
 
-    setVideos((prev) => [newVideo, ...prev]);
+    // Add to videos list with duplicate prevention
+    // Real-time subscription may also add it, so we check for duplicates
+    setVideos((prev) => {
+      const exists = prev.some(v => v.id === newVideo.id);
+      if (exists) return prev;
+      return [newVideo, ...prev];
+    });
   };
 
   const handleDeleteVideo = async (id: string) => {
