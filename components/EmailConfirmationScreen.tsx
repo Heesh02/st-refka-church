@@ -9,39 +9,113 @@ export const EmailConfirmationScreen: React.FC = () => {
 
     useEffect(() => {
         const handleEmailConfirmation = async () => {
-            try {
-                // Supabase automatically handles the token from the URL hash
-                // when using the default auth flow. We just need to check if
-                // a session was established.
-                const { data, error } = await supabase.auth.getSession();
+            let subscription: any = null;
 
-                if (error) {
+            try {
+                // Extract token from URL query parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                const type = urlParams.get('type');
+
+                // Listen for auth state changes (Supabase processes tokens automatically)
+                subscription = supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        setStatus('success');
+                        setMessage('Your email has been verified successfully!');
+                        // Clean up URL
+                        window.history.replaceState({}, document.title, '/auth/confirm');
+                        if (subscription) subscription.data.subscription.unsubscribe();
+                    }
+                });
+
+                // Handle token from query parameters (email confirmation)
+                // Supabase email confirmation links redirect through Supabase's server first,
+                // then redirect to your app. The token in query params needs special handling.
+                if (token && type === 'signup') {
+                    try {
+                        // Try to verify the token using verifyOtp
+                        // Note: The token from email links might need to be used differently
+                        const { data, error } = await supabase.auth.verifyOtp({
+                            token_hash: token,
+                            type: 'signup',
+                        });
+
+                        if (error) {
+                            // If verifyOtp fails, the token might be in a different format
+                            // Try navigating to Supabase's verify endpoint which will handle it
+                            window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/verify?token=${encodeURIComponent(token)}&type=signup&redirect_to=${encodeURIComponent(window.location.href)}`;
+                            return;
+                        }
+
+                        if (data.session) {
+                            setStatus('success');
+                            setMessage('Your email has been verified successfully!');
+                            window.history.replaceState({}, document.title, '/auth/confirm');
+                            if (subscription) subscription.data.subscription.unsubscribe();
+                            return;
+                        }
+                    } catch (verifyError: any) {
+                        // If all else fails, redirect to Supabase's verify endpoint
+                        window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/verify?token=${encodeURIComponent(token)}&type=signup&redirect_to=${encodeURIComponent(window.location.href)}`;
+                        return;
+                    }
+                }
+
+                // Check URL hash (PKCE flow) - Supabase processes these automatically
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const hashToken = hashParams.get('access_token');
+                
+                if (hashToken) {
+                    // Wait for Supabase to process the hash token
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const { data, error } = await supabase.auth.getSession();
+
+                    if (error) {
+                        setStatus('error');
+                        setMessage(error.message || 'Failed to verify email. Please try again.');
+                        if (subscription) subscription.data.subscription.unsubscribe();
+                        return;
+                    }
+
+                    if (data.session) {
+                        setStatus('success');
+                        setMessage('Your email has been verified successfully!');
+                        window.history.replaceState({}, document.title, '/auth/confirm');
+                        if (subscription) subscription.data.subscription.unsubscribe();
+                        return;
+                    }
+                }
+
+                // Check if session already exists
+                const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+                if (sessionError) {
                     setStatus('error');
-                    setMessage(error.message || 'Failed to verify email. Please try again.');
+                    setMessage(sessionError.message || 'Failed to verify email. Please try again.');
+                    if (subscription) subscription.data.subscription.unsubscribe();
                     return;
                 }
 
-                if (data.session) {
-                    // User is now authenticated - email was confirmed
+                if (sessionData.session) {
                     setStatus('success');
                     setMessage('Your email has been verified successfully!');
-                } else {
-                    // No session yet - might still be processing or already confirmed
-                    // Wait a moment and check again
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-
-                    const { data: retryData } = await supabase.auth.getSession();
-                    if (retryData.session) {
-                        setStatus('success');
-                        setMessage('Your email has been verified successfully!');
-                    } else {
-                        setStatus('success');
-                        setMessage('Your email has been verified. You can now sign in.');
-                    }
+                    if (subscription) subscription.data.subscription.unsubscribe();
+                } else if (!token && !hashToken) {
+                    // No token in URL - might be already confirmed or invalid link
+                    setStatus('error');
+                    setMessage('Invalid or expired verification link. Please request a new one.');
+                    if (subscription) subscription.data.subscription.unsubscribe();
                 }
-            } catch {
+
+                // Cleanup subscription after 10 seconds
+                setTimeout(() => {
+                    if (subscription) subscription.data.subscription.unsubscribe();
+                }, 10000);
+            } catch (err: any) {
                 setStatus('error');
-                setMessage('An unexpected error occurred. Please try again.');
+                setMessage(err?.message || 'An unexpected error occurred. Please try again.');
+                if (subscription) subscription.data.subscription.unsubscribe();
             }
         };
 

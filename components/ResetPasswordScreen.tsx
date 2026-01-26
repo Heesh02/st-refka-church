@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
@@ -9,6 +9,111 @@ export const ResetPasswordScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Handle password reset token from URL
+  useEffect(() => {
+    const handlePasswordResetToken = async () => {
+      try {
+        // Extract token from URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const type = urlParams.get('type');
+
+        // Also check URL hash (for PKCE flow)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hashToken = hashParams.get('access_token');
+        const hashType = hashParams.get('type');
+
+        // Listen for auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'PASSWORD_RECOVERY' && session) {
+            setIsInitializing(false);
+            // Clean up URL
+            window.history.replaceState({}, document.title, '/reset-password');
+          }
+        });
+
+        // Handle token from query parameters
+        if (token && type === 'recovery') {
+          try {
+            // Try to verify the token using verifyOtp
+            const { data, error } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'recovery',
+            });
+
+            if (error) {
+              // If verifyOtp fails, redirect to Supabase's verify endpoint
+              window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/verify?token=${encodeURIComponent(token)}&type=recovery&redirect_to=${encodeURIComponent(window.location.href)}`;
+              return;
+            }
+
+            if (data.session) {
+              // Session established, user can now reset password
+              setIsInitializing(false);
+              // Clean up URL
+              window.history.replaceState({}, document.title, '/reset-password');
+              subscription.unsubscribe();
+              return;
+            }
+          } catch (verifyError: any) {
+            // If all else fails, redirect to Supabase's verify endpoint
+            window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/verify?token=${encodeURIComponent(token)}&type=recovery&redirect_to=${encodeURIComponent(window.location.href)}`;
+            return;
+          }
+        }
+
+        // Handle token from hash (PKCE flow) - Supabase processes these automatically
+        if (hashToken && hashType === 'recovery') {
+          // Wait a moment for Supabase to process the hash token
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const { data, error } = await supabase.auth.getSession();
+
+          if (error) {
+            setIsError(true);
+            setMessage(error.message || 'Invalid or expired reset link. Please request a new one.');
+            setIsInitializing(false);
+            subscription.unsubscribe();
+            return;
+          }
+
+          if (data.session) {
+            setIsInitializing(false);
+            // Clean up URL
+            window.history.replaceState({}, document.title, '/reset-password');
+            subscription.unsubscribe();
+            return;
+          }
+        }
+
+        // Check if session already exists
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !sessionData.session) {
+          if (!token && !hashToken) {
+            setIsError(true);
+            setMessage('Invalid or expired reset link. Please request a new password reset.');
+          }
+        } else {
+          // Session exists, user can reset password
+          setIsInitializing(false);
+        }
+
+        // Cleanup subscription after 10 seconds
+        setTimeout(() => {
+          subscription.unsubscribe();
+        }, 10000);
+      } catch (err: any) {
+        setIsError(true);
+        setMessage(err?.message || 'An error occurred while processing the reset link.');
+        setIsInitializing(false);
+      }
+    };
+
+    void handlePasswordResetToken();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +155,19 @@ export const ResetPasswordScreen: React.FC = () => {
   const handleBackToLogin = () => {
     window.location.href = '/';
   };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="w-full max-w-md bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-3xl shadow-2xl p-8 relative z-10">
+          <div className="text-center">
+            <Loader2 className="animate-spin text-indigo-500 mx-auto mb-4" size={40} />
+            <p className="text-zinc-400 text-sm">Verifying reset link...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
