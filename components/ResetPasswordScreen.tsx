@@ -144,6 +144,8 @@ export const ResetPasswordScreen: React.FC = () => {
 
       setIsError(false);
       setMessage('Password updated successfully. You can now sign in with your new password.');
+      // Important: end recovery session so user must sign in again
+      await supabase.auth.signOut();
     } catch {
       setIsError(true);
       setMessage('Failed to update password. Please try again.');
@@ -152,7 +154,9 @@ export const ResetPasswordScreen: React.FC = () => {
     }
   };
 
-  const handleBackToLogin = () => {
+  const handleBackToLogin = async () => {
+    // Ensure we don't keep an auth session after recovery flow
+    await supabase.auth.signOut();
     window.location.href = '/';
   };
 

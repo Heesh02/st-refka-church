@@ -24,6 +24,8 @@ export const EmailConfirmationScreen: React.FC = () => {
                         setMessage('Your email has been verified successfully!');
                         // Clean up URL
                         window.history.replaceState({}, document.title, '/auth/confirm');
+                        // Important: don't keep the session after verification
+                        await supabase.auth.signOut();
                         if (subscription) subscription.data.subscription.unsubscribe();
                     }
                 });
@@ -51,6 +53,8 @@ export const EmailConfirmationScreen: React.FC = () => {
                             setStatus('success');
                             setMessage('Your email has been verified successfully!');
                             window.history.replaceState({}, document.title, '/auth/confirm');
+                            // Important: don't keep the session after verification
+                            await supabase.auth.signOut();
                             if (subscription) subscription.data.subscription.unsubscribe();
                             return;
                         }
@@ -82,6 +86,8 @@ export const EmailConfirmationScreen: React.FC = () => {
                         setStatus('success');
                         setMessage('Your email has been verified successfully!');
                         window.history.replaceState({}, document.title, '/auth/confirm');
+                        // Important: don't keep the session after verification
+                        await supabase.auth.signOut();
                         if (subscription) subscription.data.subscription.unsubscribe();
                         return;
                     }
@@ -100,6 +106,8 @@ export const EmailConfirmationScreen: React.FC = () => {
                 if (sessionData.session) {
                     setStatus('success');
                     setMessage('Your email has been verified successfully!');
+                    // Important: don't keep the session after verification
+                    await supabase.auth.signOut();
                     if (subscription) subscription.data.subscription.unsubscribe();
                 } else if (!token && !hashToken) {
                     // No token in URL - might be already confirmed or invalid link
@@ -122,7 +130,9 @@ export const EmailConfirmationScreen: React.FC = () => {
         void handleEmailConfirmation();
     }, []);
 
-    const handleGoToLogin = () => {
+    const handleGoToLogin = async () => {
+        // Ensure we don't keep an auth session after verification flow
+        await supabase.auth.signOut();
         window.location.href = '/';
     };
 
