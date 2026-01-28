@@ -29,10 +29,47 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
 
   if (!isOpen) return null;
 
-  const extractYoutubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+  // Accept normal videos AND YouTube Shorts in a robust way
+  const extractYoutubeId = (input: string) => {
+    const trimmed = input.trim();
+
+    // Try URL-based parsing first
+    try {
+      const url = new URL(trimmed);
+      const host = url.hostname.replace('www.', '');
+
+      // youtu.be/<id>
+      if (host === 'youtu.be') {
+        const id = url.pathname.split('/')[1];
+        return id && id.length === 11 ? id : null;
+      }
+
+      if (host.endsWith('youtube.com')) {
+        // Shorts: youtube.com/shorts/<id>
+        if (url.pathname.startsWith('/shorts/')) {
+          const segments = url.pathname.split('/');
+          const id = segments[2];
+          return id && id.length === 11 ? id : null;
+        }
+
+        // Normal watch URLs: youtube.com/watch?v=<id>
+        const v = url.searchParams.get('v');
+        if (v && v.length === 11) return v;
+
+        // Embedded or other forms: /embed/<id> or /v/<id>
+        const parts = url.pathname.split('/');
+        const knownIndex = parts.findIndex((p) => p === 'embed' || p === 'v');
+        if (knownIndex !== -1 && parts[knownIndex + 1]?.length === 11) {
+          return parts[knownIndex + 1];
+        }
+      }
+    } catch {
+      // Not a full URL; fall through to regex-based fallback
+    }
+
+    // Fallback: look for a 11-char video id anywhere in the string
+    const idMatch = trimmed.match(/([a-zA-Z0-9_-]{11})/);
+    return idMatch ? idMatch[1] : null;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,7 +131,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
               required
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="https://www.youtube.com/watch?v=... or /shorts/..."
               className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             />
           </div>
