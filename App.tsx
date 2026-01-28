@@ -317,12 +317,67 @@ const App: React.FC = () => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'media_items',
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          // Only sync the view count (avoid clobbering likes/comments client state)
+          if (typeof updated?.id !== 'string') return;
+          if (typeof updated?.views !== 'number') return;
+
+          setVideos((prev) =>
+            prev.map((v) => (v.id === updated.id ? { ...v, views: updated.views } : v))
+          );
+          setPlayingVideo((prev) =>
+            prev && prev.id === updated.id ? { ...prev, views: updated.views } : prev
+          );
+        }
+      )
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
   }, [currentUser]);
+
+  // --- Views: count a view on every Play click ---
+  const handlePlayVideo = async (video: Video) => {
+    // Open immediately + optimistic UI update
+    const nextViews = (video.views ?? 0) + 1;
+    setPlayingVideo({ ...video, views: nextViews });
+    setVideos((prev) => prev.map((v) => (v.id === video.id ? { ...v, views: nextViews } : v)));
+
+    // Persist best-effort (requires RLS policy allowing update of `views`)
+    try {
+      const { data, error } = await supabase
+        .from('media_items')
+        .update({ views: nextViews })
+        .eq('id', video.id)
+        .select('views')
+        .single();
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to increment views', error);
+        return;
+      }
+
+      if (typeof data?.views === 'number') {
+        setVideos((prev) => prev.map((v) => (v.id === video.id ? { ...v, views: data.views } : v)));
+        setPlayingVideo((prev) =>
+          prev && prev.id === video.id ? { ...prev, views: data.views } : prev
+        );
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to increment views', err);
+    }
+  };
 
   const handleLogin = async (email: string, pass: string): Promise<string | null> => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -626,7 +681,7 @@ const App: React.FC = () => {
     if (notification.videoId) {
       const video = videos.find((v) => v.id === notification.videoId);
       if (video) {
-        setPlayingVideo(video);
+        void handlePlayVideo(video);
         setActiveTab('library');
       }
     }
@@ -931,7 +986,7 @@ const App: React.FC = () => {
                           <VideoCard
                             key={video.id}
                             video={video}
-                            onPlay={setPlayingVideo}
+                            onPlay={handlePlayVideo}
                             onDelete={isAdmin ? handleDeleteVideo : undefined}
                             onLike={handleLike}
                             onComment={handleCommentClick}
