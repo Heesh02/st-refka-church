@@ -352,30 +352,16 @@ const App: React.FC = () => {
     setPlayingVideo({ ...video, views: nextViews });
     setVideos((prev) => prev.map((v) => (v.id === video.id ? { ...v, views: nextViews } : v)));
 
-    // Persist best-effort (requires RLS policy allowing update of `views`)
+    // Persist via RPC (increment_media_views) – RLS-safe
     try {
-      const { data, error } = await supabase
-        .from('media_items')
-        .update({ views: nextViews })
-        .eq('id', video.id)
-        .select('views')
-        .single();
-
+      const { error } = await supabase.rpc('increment_media_views', { p_id: video.id });
       if (error) {
         // eslint-disable-next-line no-console
-        console.warn('Failed to increment views', error);
-        return;
-      }
-
-      if (typeof data?.views === 'number') {
-        setVideos((prev) => prev.map((v) => (v.id === video.id ? { ...v, views: data.views } : v)));
-        setPlayingVideo((prev) =>
-          prev && prev.id === video.id ? { ...prev, views: data.views } : prev
-        );
+        console.warn('Failed to increment views via RPC', error);
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn('Failed to increment views', err);
+      console.warn('Failed to increment views via RPC', err);
     }
   };
 
