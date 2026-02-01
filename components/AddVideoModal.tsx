@@ -30,46 +30,33 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
   if (!isOpen) return null;
 
   // Accept normal videos AND YouTube Shorts in a robust way
-  const extractYoutubeId = (input: string) => {
+  const extractYoutubeId = (input: string): string | null => {
     const trimmed = input.trim();
 
-    // Try URL-based parsing first
-    try {
-      const url = new URL(trimmed);
-      const host = url.hostname.replace('www.', '');
+    // Regex patterns for different YouTube URL formats
+    const patterns = [
+      // YouTube Shorts: youtube.com/shorts/<id> or with query params
+      /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      // Standard watch URL: youtube.com/watch?v=<id>
+      /(?:youtube\.com\/watch\?.*v=)([a-zA-Z0-9_-]{11})/,
+      // Short URL: youtu.be/<id>
+      /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+      // Embed URL: youtube.com/embed/<id>
+      /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+      // Old format: youtube.com/v/<id>
+      /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+    ];
 
-      // youtu.be/<id>
-      if (host === 'youtu.be') {
-        const id = url.pathname.split('/')[1];
-        return id && id.length === 11 ? id : null;
+    for (const pattern of patterns) {
+      const match = trimmed.match(pattern);
+      if (match && match[1]) {
+        return match[1];
       }
-
-      if (host.endsWith('youtube.com')) {
-        // Shorts: youtube.com/shorts/<id>
-        if (url.pathname.startsWith('/shorts/')) {
-          const segments = url.pathname.split('/');
-          const id = segments[2];
-          return id && id.length === 11 ? id : null;
-        }
-
-        // Normal watch URLs: youtube.com/watch?v=<id>
-        const v = url.searchParams.get('v');
-        if (v && v.length === 11) return v;
-
-        // Embedded or other forms: /embed/<id> or /v/<id>
-        const parts = url.pathname.split('/');
-        const knownIndex = parts.findIndex((p) => p === 'embed' || p === 'v');
-        if (knownIndex !== -1 && parts[knownIndex + 1]?.length === 11) {
-          return parts[knownIndex + 1];
-        }
-      }
-    } catch {
-      // Not a full URL; fall through to regex-based fallback
     }
 
-    // Fallback: look for a 11-char video id anywhere in the string
-    const idMatch = trimmed.match(/([a-zA-Z0-9_-]{11})/);
-    return idMatch ? idMatch[1] : null;
+    // Last resort: look for any 11-char YouTube video ID pattern
+    const fallbackMatch = trimmed.match(/([a-zA-Z0-9_-]{11})/);
+    return fallbackMatch ? fallbackMatch[1] : null;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
