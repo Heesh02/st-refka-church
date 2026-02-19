@@ -5,13 +5,15 @@ import { Sidebar } from './components/Sidebar';
 import { VideoCard } from './components/VideoCard';
 import { VideoModal } from './components/VideoModal';
 import { AddVideoModal } from './components/AddVideoModal';
+import { AddEventModal } from './components/AddEventModal';
+import { EventCard } from './components/EventCard';
 import { AuthScreen } from './components/AuthScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { ResetPasswordScreen } from './components/ResetPasswordScreen';
 import { EmailConfirmationScreen } from './components/EmailConfirmationScreen';
 import { CommentModal } from './components/CommentModal';
 import { UserManagementScreen } from './components/UserManagementScreen';
-import { Video, CATEGORIES, Category, User, Language, Theme, Notification as NotificationType } from './types';
+import { Video, CATEGORIES, Category, User, Language, Theme, Notification as NotificationType, ChurchEvent } from './types';
 import { DUMMY_VIDEOS, TRANSLATIONS } from './constants';
 import { supabase } from './supabaseClient';
 import { NotificationDropdown } from './components/NotificationDropdown';
@@ -34,7 +36,14 @@ const App: React.FC = () => {
   // Modal States
   const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [commentVideo, setCommentVideo] = useState<Video | null>(null);
+
+  // Church Events State
+  const [events, setEvents] = useState<ChurchEvent[]>(() => {
+    const saved = localStorage.getItem('churchEvents');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Notification States
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
@@ -480,6 +489,11 @@ const App: React.FC = () => {
     localStorage.setItem('favoriteVideos', JSON.stringify(favoriteIds));
   }, [favoriteIds]);
 
+  // Save events to localStorage
+  useEffect(() => {
+    localStorage.setItem('churchEvents', JSON.stringify(events));
+  }, [events]);
+
   // Toggle favorite
   const handleToggleFavorite = (videoId: string) => {
     setFavoriteIds(prev =>
@@ -487,6 +501,21 @@ const App: React.FC = () => {
         ? prev.filter(id => id !== videoId)
         : [...prev, videoId]
     );
+  };
+
+  // --- Church Events Handlers ---
+  const handleAddEvent = (eventData: { title: string; eventDate: string }) => {
+    const newEvent: ChurchEvent = {
+      id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      title: eventData.title,
+      eventDate: eventData.eventDate,
+      createdAt: new Date().toISOString(),
+    };
+    setEvents(prev => [...prev, newEvent]);
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
   };
 
   // Reset page when filters change
@@ -771,8 +800,8 @@ const App: React.FC = () => {
                       setIsMobileMenuOpen(false);
                     }}
                     className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeTab === item.id
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                       }`}
                   >
                     {item.label}
@@ -844,11 +873,11 @@ const App: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-600/20"
+                onClick={() => activeTab === 'events' ? setIsAddEventModalOpen(true) : setIsAddModalOpen(true)}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-600/20 shrink-0"
               >
                 <Plus size={18} />
-                <span>{t.addMedia}</span>
+                <span>{activeTab === 'events' ? t.addEvent : t.addMedia}</span>
               </motion.button>
             )}
           </div>
@@ -963,8 +992,33 @@ const App: React.FC = () => {
                   />
                 )}
 
+                {/* Events Grid */}
+                {activeTab === 'events' && (
+                  events.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+                      {events
+                        .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+                        .map((event) => (
+                          <EventCard
+                            key={event.id}
+                            event={event}
+                            onDelete={isAdmin ? handleDeleteEvent : undefined}
+                            translations={t}
+                            language={language}
+                          />
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-zinc-400 dark:text-zinc-500">
+                      <Filter size={48} className="mb-4 opacity-50" />
+                      <p className="text-lg font-medium">{t.noEvents}</p>
+                      <p className="text-sm">{t.noEventsDesc}</p>
+                    </div>
+                  )
+                )}
+
                 {/* Video Grid */}
-                {activeTab !== 'settings' && activeTab !== 'dashboard' && activeTab !== 'users' && (
+                {activeTab !== 'settings' && activeTab !== 'dashboard' && activeTab !== 'users' && activeTab !== 'events' && (
                   paginatedVideos.length > 0 ? (
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
@@ -1044,6 +1098,14 @@ const App: React.FC = () => {
             isOpen={isAddModalOpen}
             onClose={() => setIsAddModalOpen(false)}
             onAdd={handleAddVideo}
+            translations={t}
+          />
+        )}
+        {isAddEventModalOpen && (
+          <AddEventModal
+            isOpen={isAddEventModalOpen}
+            onClose={() => setIsAddEventModalOpen(false)}
+            onAdd={handleAddEvent}
             translations={t}
           />
         )}

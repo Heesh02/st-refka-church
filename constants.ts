@@ -128,7 +128,18 @@ export const TRANSLATIONS = {
     addToFavorites: 'Add to Favorites',
     removeFromFavorites: 'Remove from Favorites',
     noFavorites: 'No favorites yet',
-    noFavoritesDesc: 'Videos you save will appear here.'
+    noFavoritesDesc: 'Videos you save will appear here.',
+    // Church Events
+    addEvent: 'Add Event',
+    addNewEvent: 'Add New Event',
+    eventName: 'Event Name',
+    eventDate: 'Date',
+    eventTime: 'Time',
+    eventNamePlaceholder: 'e.g. Sunday Liturgy',
+    addToCalendar: 'Add to Calendar',
+    noEvents: 'No events yet',
+    noEventsDesc: 'Church events will appear here.',
+    deleteEventConfirm: 'Are you sure you want to delete this event?'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -204,6 +215,17 @@ export const TRANSLATIONS = {
     addToFavorites: 'إضافة إلى المفضلة',
     removeFromFavorites: 'إزالة من المفضلة',
     noFavorites: 'لا توجد مفضلات بعد',
-    noFavoritesDesc: 'ستظهر الفيديوهات المحفوظة هنا.'
+    noFavoritesDesc: 'ستظهر الفيديوهات المحفوظة هنا.',
+    // Church Events
+    addEvent: 'إضافة مناسبة',
+    addNewEvent: 'إضافة مناسبة جديدة',
+    eventName: 'اسم المناسبة',
+    eventDate: 'التاريخ',
+    eventTime: 'الوقت',
+    eventNamePlaceholder: 'مثال: القداس الأحدي',
+    addToCalendar: 'إضافة إلى التقويم',
+    noEvents: 'لا توجد مناسبات بعد',
+    noEventsDesc: 'ستظهر مناسبات الكنيسة هنا.',
+    deleteEventConfirm: 'هل أنت متأكد أنك تريد حذف هذه المناسبة؟'
   }
 };

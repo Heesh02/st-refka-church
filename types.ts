@@ -45,3 +45,10 @@ export interface Notification {
   read: boolean;
   createdAt: string;
 }
+
+export interface ChurchEvent {
+  id: string;
+  title: string;
+  eventDate: string; // ISO date-time string
+  createdAt: string;
+}
