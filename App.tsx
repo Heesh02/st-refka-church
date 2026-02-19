@@ -374,22 +374,23 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = async (email: string, pass: string): Promise<string | null> => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: pass,
-    });
+  const handleLogin = async (identifier: string, pass: string, method: 'email' | 'phone'): Promise<string | null> => {
+    const credentials = method === 'email'
+      ? { email: identifier, password: pass }
+      : { phone: identifier, password: pass };
+
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
     if (error || !data.user) {
-      return error?.message || 'Invalid email or password';
+      return error?.message || 'Invalid credentials';
     }
 
     const authUser = data.user;
 
-    // Fetch profile to get name and role
+    // Fetch profile to get name, role, and phone
     let { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, role')
+      .select('full_name, role, phone')
       .eq('id', authUser.id)
       .maybeSingle();
 
@@ -402,8 +403,9 @@ const App: React.FC = () => {
           id: authUser.id,
           full_name: fullName,
           role: 'user',
+          phone: authUser.user_metadata?.phone || authUser.phone || null,
         })
-        .select('full_name, role')
+        .select('full_name, role, phone')
         .single();
 
       if (newProfile) {
@@ -414,6 +416,7 @@ const App: React.FC = () => {
     const userObj: User = {
       id: authUser.id,
       email: authUser.email || '',
+      phone: profile?.phone || authUser.user_metadata?.phone || authUser.phone || '',
       name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email || 'User',
       role: (profile?.role as User['role']) || 'user',
     };
@@ -422,13 +425,14 @@ const App: React.FC = () => {
     return null;
   };
 
-  const handleRegister = async (email: string, pass: string, name: string): Promise<string | null> => {
+  const handleRegister = async (email: string, pass: string, name: string, phone: string): Promise<string | null> => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password: pass,
       options: {
         data: {
-          full_name: name, // Store name in user metadata
+          full_name: name,
+          phone: phone,
         },
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
@@ -446,6 +450,7 @@ const App: React.FC = () => {
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: authUser.id,
         full_name: name,
+        phone: phone,
         role: 'user',
       });
 
@@ -459,7 +464,7 @@ const App: React.FC = () => {
     }
 
     // Do not auto-login; rely on email confirmation if enabled.
-    return 'Registration successful. Please check your email to confirm your address, then sign in.';
+    return t.registrationSuccess || 'Registration successful. Please check your email to confirm your address, then sign in.';
   };
 
   const handleForgotPassword = async (email: string): Promise<string | null> => {
@@ -734,6 +739,7 @@ const App: React.FC = () => {
         onLogin={handleLogin}
         onRegister={handleRegister}
         onForgotPassword={handleForgotPassword}
+        translations={t}
       />
     );
   }

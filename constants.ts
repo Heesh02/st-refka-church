@@ -139,7 +139,27 @@ export const TRANSLATIONS = {
     addToCalendar: 'Add to Calendar',
     noEvents: 'No events yet',
     noEventsDesc: 'Church events will appear here.',
-    deleteEventConfirm: 'Are you sure you want to delete this event?'
+    deleteEventConfirm: 'Are you sure you want to delete this event?',
+    // Phone Auth
+    email: 'Email',
+    phoneNumber: 'Phone Number',
+    phonePlaceholder: '+1234567890',
+    loginWithEmail: 'Login with Email',
+    loginWithPhone: 'Login with Phone',
+    emailOrPhone: 'Email or Phone',
+    enterEmail: 'Enter your email',
+    enterPhone: 'Enter your phone number',
+    fullName: 'Full Name',
+    emailAddress: 'Email Address',
+    password: 'Password',
+    signIn: 'Sign In',
+    createAccount: 'Create Account',
+    forgotPassword: 'Forgot password?',
+    dontHaveAccount: "Don't have an account?",
+    alreadyHaveAccount: 'Already have an account?',
+    signUp: 'Sign up',
+    signInLink: 'Sign in',
+    registrationSuccess: 'Registration successful. Please check your email to confirm your address, then sign in.'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -226,6 +246,26 @@ export const TRANSLATIONS = {
     addToCalendar: 'إضافة إلى التقويم',
     noEvents: 'لا توجد مناسبات بعد',
     noEventsDesc: 'ستظهر مناسبات الكنيسة هنا.',
-    deleteEventConfirm: 'هل أنت متأكد أنك تريد حذف هذه المناسبة؟'
+    deleteEventConfirm: 'هل أنت متأكد أنك تريد حذف هذه المناسبة؟',
+    // Phone Auth
+    email: 'البريد الإلكتروني',
+    phoneNumber: 'رقم الهاتف',
+    phonePlaceholder: '+1234567890',
+    loginWithEmail: 'تسجيل بالبريد',
+    loginWithPhone: 'تسجيل بالهاتف',
+    emailOrPhone: 'البريد أو الهاتف',
+    enterEmail: 'أدخل بريدك الإلكتروني',
+    enterPhone: 'أدخل رقم هاتفك',
+    fullName: 'الاسم الكامل',
+    emailAddress: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    signIn: 'تسجيل الدخول',
+    createAccount: 'إنشاء حساب',
+    forgotPassword: 'نسيت كلمة المرور؟',
+    dontHaveAccount: 'ليس لديك حساب؟',
+    alreadyHaveAccount: 'لديك حساب بالفعل؟',
+    signUp: 'سجل الآن',
+    signInLink: 'تسجيل الدخول',
+    registrationSuccess: 'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد عنوانك، ثم سجل الدخول.'
   }
 };

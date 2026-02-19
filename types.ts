@@ -29,6 +29,7 @@ export const CATEGORIES: Category[] = ['All', 'Sermons', 'Liturgies', 'Bible Stu
 export interface User {
   id: string;
   email: string;
+  phone?: string;
   name: string;
   role: 'admin' | 'user';
 }

@@ -1,21 +1,41 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface AuthScreenProps {
-  onLogin: (email: string, pass: string) => Promise<string | null>;
-  onRegister: (email: string, pass: string, name: string) => Promise<string | null>;
+  onLogin: (identifier: string, pass: string, method: 'email' | 'phone') => Promise<string | null>;
+  onRegister: (email: string, pass: string, name: string, phone: string) => Promise<string | null>;
   onForgotPassword: (email: string) => Promise<string | null>;
+  translations: {
+    loginWithEmail: string;
+    loginWithPhone: string;
+    fullName: string;
+    emailAddress: string;
+    phoneNumber: string;
+    phonePlaceholder: string;
+    password: string;
+    signIn: string;
+    createAccount: string;
+    forgotPassword: string;
+    dontHaveAccount: string;
+    alreadyHaveAccount: string;
+    signUp: string;
+    signInLink: string;
+    enterEmail: string;
+    enterPhone: string;
+  };
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onForgotPassword }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onForgotPassword, translations: t }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
   // Form State
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
@@ -24,15 +44,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
     setMessage(null);
     setIsLoading(true);
 
-    // Simulate network delay for better UX feel
     await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
       let resultError: string | null = null;
       if (isLogin) {
-        resultError = await onLogin(email, password);
+        const identifier = loginMethod === 'email' ? email : phone;
+        resultError = await onLogin(identifier, password, loginMethod);
       } else {
-        resultError = await onRegister(email, password, name);
+        resultError = await onRegister(email, password, name, phone);
       }
 
       if (resultError) {
@@ -72,37 +92,47 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
     }
   };
 
+  const switchMode = () => {
+    setIsLogin(!isLogin);
+    setMessage(null);
+    setEmail('');
+    setPassword('');
+    setName('');
+    setPhone('');
+    setLoginMethod('email');
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decoration */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.1, 1],
             rotate: [0, 5, -5, 0],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-900/10 blur-[120px]" 
+          className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-900/10 blur-[120px]"
         />
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             scale: [1, 1.2, 1],
             rotate: [0, -5, 5, 0],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-red-900/10 blur-[100px]" 
+          className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-red-900/10 blur-[100px]"
         />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="w-full max-w-md bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-3xl shadow-2xl p-8 relative z-10"
       >
-        
+
         <div className="text-center mb-8">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
@@ -118,15 +148,44 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
           </p>
         </div>
 
+        {/* Login Method Toggle — only for login mode */}
+        {isLogin && (
+          <div className="flex bg-zinc-950/50 border border-zinc-800 rounded-xl p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => { setLoginMethod('email'); setMessage(null); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${loginMethod === 'email'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-zinc-400 hover:text-zinc-300'
+                }`}
+            >
+              <Mail size={16} />
+              {t.loginWithEmail}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginMethod('phone'); setMessage(null); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${loginMethod === 'phone'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-zinc-400 hover:text-zinc-300'
+                }`}
+            >
+              <Phone size={16} />
+              {t.loginWithPhone}
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Full Name — registration only */}
           {!isLogin && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="space-y-1.5"
             >
-              <label className="text-xs font-medium text-zinc-400 ml-1">Full Name</label>
+              <label className="text-xs font-medium text-zinc-400 ml-1">{t.fullName}</label>
               <div className="relative group">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
                 <input
@@ -141,23 +200,45 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
             </motion.div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-400 ml-1">Email Address</label>
-            <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                placeholder="name@example.com"
-              />
+          {/* Email — always shown in registration, shown in login when method is email */}
+          {(!isLogin || loginMethod === 'email') && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-400 ml-1">{t.emailAddress}</label>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required={!isLogin || loginMethod === 'email'}
+                  className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                  placeholder="name@example.com"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
+          {/* Phone — always shown in registration (required), shown in login when method is phone */}
+          {(!isLogin || loginMethod === 'phone') && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-400 ml-1">{t.phoneNumber}</label>
+              <div className="relative group">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required={!isLogin || loginMethod === 'phone'}
+                  className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                  placeholder={t.phonePlaceholder}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Password */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-400 ml-1">Password</label>
+            <label className="text-xs font-medium text-zinc-400 ml-1">{t.password}</label>
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
               <input
@@ -169,7 +250,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
                 placeholder="••••••••"
               />
             </div>
-            {isLogin && (
+            {isLogin && loginMethod === 'email' && (
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -177,21 +258,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
                   className="text-[11px] text-zinc-400 hover:text-indigo-300 transition-colors"
                   disabled={isLoading}
                 >
-                  Forgot password?
+                  {t.forgotPassword}
                 </button>
               </div>
             )}
           </div>
 
           {message && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`p-3 rounded-lg text-xs text-center border ${
-                isError
+              className={`p-3 rounded-lg text-xs text-center border ${isError
                   ? 'bg-red-500/10 border-red-500/20 text-red-400'
                   : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              }`}
+                }`}
             >
               {message}
             </motion.div>
@@ -208,7 +288,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
               <Loader2 className="animate-spin" size={20} />
             ) : (
               <>
-                {isLogin ? 'Sign In' : 'Create Account'}
+                {isLogin ? t.signIn : t.createAccount}
                 <ArrowRight size={18} />
               </>
             )}
@@ -217,26 +297,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
 
         <div className="mt-6 text-center">
           <p className="text-zinc-500 text-sm">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {isLogin ? t.dontHaveAccount + ' ' : t.alreadyHaveAccount + ' '}
             <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setMessage(null);
-                setEmail('');
-                setPassword('');
-                setName('');
-              }}
+              onClick={switchMode}
               className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
+              {isLogin ? t.signUp : t.signInLink}
             </button>
           </p>
         </div>
-        
+
         <div className="mt-8 pt-6 border-t border-zinc-800 text-center">
-             <p className="text-[10px] text-zinc-600 uppercase tracking-widest">
-                St. Refka Church
-             </p>
+          <p className="text-[10px] text-zinc-600 uppercase tracking-widest">
+            St. Refka Church
+          </p>
         </div>
       </motion.div>
     </div>
