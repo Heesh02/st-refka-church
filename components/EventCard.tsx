@@ -87,7 +87,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete, translati
                             onDelete(event.id);
                         }
                     }}
-                    className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-400/10"
+                    className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-400/10"
                 >
                     <Trash2 size={16} />
                 </button>

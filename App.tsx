@@ -832,16 +832,68 @@ const App: React.FC = () => {
 
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Header */}
-        <header className="h-20 px-4 md:px-8 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-500 ease-smooth">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white md:hidden"
-          >
-            <Menu size={24} />
-          </button>
+        <header className="px-4 md:px-8 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-500 ease-smooth">
+          {/* Top row: hamburger + actions */}
+          <div className="h-16 md:h-20 flex items-center justify-between gap-3">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white md:hidden shrink-0"
+            >
+              <Menu size={24} />
+            </button>
 
-          <div className="flex items-center gap-4 flex-1 max-w-xl">
+            {/* Desktop search bar */}
+            <div className="hidden md:flex items-center gap-4 flex-1 max-w-xl">
+              <div className="relative w-full group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-500 transition-colors" size={18} />
+                <input
+                  type="text"
+                  placeholder={isAdmin ? t.searchPlaceholderAdmin : t.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-300"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-4 ml-auto md:ml-0">
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-all relative"
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-indigo-500 rounded-full border border-white dark:border-zinc-950"></span>
+                  )}
+                </button>
+                <NotificationDropdown
+                  isOpen={isNotificationOpen}
+                  onClose={() => setIsNotificationOpen(false)}
+                  notifications={notifications}
+                  onMarkAsRead={handleMarkAsRead}
+                  onMarkAllAsRead={handleMarkAllAsRead}
+                  onNotificationClick={handleNotificationClick}
+                />
+              </div>
+
+              {isAdmin && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => activeTab === 'events' ? setIsAddEventModalOpen(true) : setIsAddModalOpen(true)}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-600/20 shrink-0"
+                >
+                  <Plus size={18} />
+                  <span className="hidden sm:inline">{activeTab === 'events' ? t.addEvent : t.addMedia}</span>
+                </motion.button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile search row */}
+          <div className="flex md:hidden pb-3">
             <div className="relative w-full group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-500 transition-colors" size={18} />
               <input
@@ -853,44 +905,10 @@ const App: React.FC = () => {
               />
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <button
-                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-all relative"
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-indigo-500 rounded-full border border-white dark:border-zinc-950"></span>
-                )}
-              </button>
-              <NotificationDropdown
-                isOpen={isNotificationOpen}
-                onClose={() => setIsNotificationOpen(false)}
-                notifications={notifications}
-                onMarkAsRead={handleMarkAsRead}
-                onMarkAllAsRead={handleMarkAllAsRead}
-                onNotificationClick={handleNotificationClick}
-              />
-            </div>
-
-            {isAdmin && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => activeTab === 'events' ? setIsAddEventModalOpen(true) : setIsAddModalOpen(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-600/20 shrink-0"
-              >
-                <Plus size={18} />
-                <span>{activeTab === 'events' ? t.addEvent : t.addMedia}</span>
-              </motion.button>
-            )}
-          </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
           <div className="max-w-7xl mx-auto">
 
             {/* Title & Stats */}
