@@ -710,6 +710,16 @@ const App: React.FC = () => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const isAdmin = currentUser?.role === 'admin';
+  const isRtl = language === 'ar';
+
+  // Ensure non-admin users cannot land on admin-only tabs via direct URL or state manipulation
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'dashboard' || activeTab === 'users')) {
+      setActiveTab('library');
+    }
+  }, [isAdmin, activeTab]);
+
   // --- Rendering ---
 
   const isResetRoute =
@@ -732,16 +742,6 @@ const App: React.FC = () => {
   if (isResetRoute) {
     return <ResetPasswordScreen />;
   }
-
-  const isAdmin = currentUser?.role === 'admin';
-  const isRtl = language === 'ar';
-
-  // Ensure non-admin users cannot land on admin-only tabs via direct URL or state manipulation
-  useEffect(() => {
-    if (!isAdmin && (activeTab === 'dashboard' || activeTab === 'users')) {
-      setActiveTab('library');
-    }
-  }, [isAdmin, activeTab]);
 
   if (!currentUser) {
     return (
