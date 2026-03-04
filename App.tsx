@@ -745,6 +745,7 @@ const App: React.FC = () => {
   }
 
   const isAdmin = currentUser.role === 'admin';
+  const isRtl = language === 'ar';
 
   // Ensure non-admin users cannot land on admin-only tabs via direct URL or state manipulation
   useEffect(() => {
@@ -804,11 +805,13 @@ const App: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div
-              initial={{ x: '-100%' }}
+              initial={{ x: isRtl ? '100%' : '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
+              exit={{ x: isRtl ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 h-full w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-50 md:hidden overflow-y-auto"
+              className={`fixed top-0 h-full w-72 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 z-50 md:hidden overflow-y-auto ${
+                isRtl ? 'right-0 border-l' : 'left-0 border-r'
+              }`}
             >
               <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
                 <div className="flex items-center gap-3">
