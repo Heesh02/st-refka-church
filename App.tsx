@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, Bell, Filter, Loader2, ChevronLeft, ChevronRight, Heart, Menu, X } from 'lucide-react';
+import { Plus, Search, Bell, Filter, Loader2, ChevronLeft, ChevronRight, Heart, Menu, X, MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
 import { VideoCard } from './components/VideoCard';
@@ -746,6 +746,41 @@ const App: React.FC = () => {
 
   const isAdmin = currentUser.role === 'admin';
 
+  // Ensure non-admin users cannot land on admin-only tabs via direct URL or state manipulation
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'dashboard' || activeTab === 'users')) {
+      setActiveTab('library');
+    }
+  }, [isAdmin, activeTab]);
+
+  // --- Dashboard Insights (Admin) ---
+  const totalItems = videos.length;
+  const totalViews = videos.reduce((acc, curr) => acc + (curr.views || 0), 0);
+  const totalLikes = videos.reduce((acc, curr) => acc + (curr.likesCount || 0), 0);
+  const totalComments = videos.reduce((acc, curr) => acc + (curr.commentsCount || 0), 0);
+  const avgViewsPerItem = totalItems ? Math.round(totalViews / totalItems) : 0;
+
+  const mostViewedVideo = totalItems
+    ? videos.reduce<Video | null>(
+        (top, video) => {
+          if (!top) return video;
+          return video.views > top.views ? video : top;
+        },
+        null
+      )
+    : null;
+
+  const recentVideos = totalItems
+    ? [...videos]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3)
+    : [];
+
+  const categoryCounts = CATEGORIES.filter((c) => c !== 'All').map((category) => ({
+    category,
+    count: videos.filter((v) => v.category === category).length,
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans flex selection:bg-indigo-500/30 transition-colors duration-500 ease-smooth">
       {/* Desktop Sidebar */}
@@ -988,22 +1023,136 @@ const App: React.FC = () => {
                   />
                 )}
 
-                {/* Dashboard Stats (Admin Only) */}
+                {/* Dashboard Stats & Insights (Admin Only) */}
                 {isAdmin && activeTab === 'dashboard' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
-                      <p className="text-zinc-500 text-sm font-medium uppercase tracking-wider mb-1">{t.totalItems}</p>
-                      <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">{videos.length}</h3>
+                  <div className="space-y-8 mb-10">
+                    {/* Top KPIs */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+                        <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">
+                          {t.totalItems}
+                        </p>
+                        <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">
+                          {totalItems}
+                          <span className="ml-2 text-sm font-medium text-zinc-400">
+                            {t.videosLabel}
+                          </span>
+                        </h3>
+                      </div>
+
+                      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+                        <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">
+                          {t.totalViews}
+                        </p>
+                        <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">
+                          {totalViews.toLocaleString()}
+                        </h3>
+                        {avgViewsPerItem > 0 && (
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {t.avgViewsPerItem}: <span className="font-medium">{avgViewsPerItem.toLocaleString()}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="bg-indigo-50 dark:bg-indigo-600/10 border border-indigo-100 dark:border-indigo-500/20 p-6 rounded-2xl shadow-sm">
+                        <p className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                          {t.engagement}
+                        </p>
+                        <div className="flex items-center gap-6">
+                          <div>
+                            <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+                              <Heart size={16} className="text-rose-500" />
+                              <span className="font-medium">{t.totalLikes}</span>
+                            </div>
+                            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-white">
+                              {totalLikes.toLocaleString()}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+                              <MessageCircle size={16} className="text-sky-500" />
+                              <span className="font-medium">{t.totalComments}</span>
+                            </div>
+                            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-white">
+                              {totalComments.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
-                      <p className="text-zinc-500 text-sm font-medium uppercase tracking-wider mb-1">{t.totalViews}</p>
-                      <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">
-                        {(videos.reduce((acc, curr) => acc + curr.views, 0) / 1000).toFixed(1)}k
-                      </h3>
-                    </div>
-                    <div className="bg-indigo-50 dark:bg-indigo-600/10 border border-indigo-100 dark:border-indigo-500/20 p-6 rounded-2xl shadow-sm">
-                      <p className="text-indigo-600 dark:text-indigo-400 text-sm font-medium uppercase tracking-wider mb-1">{t.focus}</p>
-                      <h3 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{selectedCategory}</h3>
+
+                    {/* Deeper insights */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Most popular & recent uploads */}
+                      <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+                          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">
+                            {t.mostPopular}
+                          </p>
+                          {mostViewedVideo ? (
+                            <div>
+                              <h3 className="text-base font-semibold text-zinc-900 dark:text-white line-clamp-2">
+                                {mostViewedVideo.title}
+                              </h3>
+                              <p className="mt-2 text-sm text-zinc-500">
+                                {mostViewedVideo.views.toLocaleString()} {t.views}
+                                {typeof mostViewedVideo.likesCount === 'number' && ` • ${mostViewedVideo.likesCount.toLocaleString()} ❤`}
+                                {typeof mostViewedVideo.commentsCount === 'number' && ` • ${mostViewedVideo.commentsCount.toLocaleString()} 💬`}
+                              </p>
+                              <p className="mt-1 text-xs text-zinc-500">
+                                {t.categories[mostViewedVideo.category as keyof typeof t.categories] ?? mostViewedVideo.category}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-zinc-500">{t.noMedia}</p>
+                          )}
+                        </div>
+
+                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+                          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">
+                            {t.recentUploads}
+                          </p>
+                          {recentVideos.length > 0 ? (
+                            <ul className="space-y-3">
+                              {recentVideos.map((v) => (
+                                <li key={v.id} className="flex flex-col">
+                                  <span className="text-sm font-semibold text-zinc-900 dark:text-white line-clamp-1">
+                                    {v.title}
+                                  </span>
+                                  <span className="text-xs text-zinc-500">
+                                    {new Date(v.createdAt).toLocaleDateString()} •{' '}
+                                    {v.views.toLocaleString()} {t.views}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-zinc-500">{t.noRecentUploads}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Category breakdown */}
+                      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+                        <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-3">
+                          {t.byCategory}
+                        </p>
+                        <div className="space-y-2">
+                          {categoryCounts.map(({ category, count }) => (
+                            <div key={category} className="flex items-center justify-between text-sm">
+                              <span className="text-zinc-600 dark:text-zinc-300">
+                                {t.categories[category as keyof typeof t.categories]}
+                              </span>
+                              <span className="text-zinc-900 dark:text-white font-medium">
+                                {count}
+                              </span>
+                            </div>
+                          ))}
+                          {categoryCounts.every((c) => c.count === 0) && (
+                            <p className="text-xs text-zinc-500">{t.noMediaDesc}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
