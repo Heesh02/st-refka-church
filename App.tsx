@@ -733,6 +733,16 @@ const App: React.FC = () => {
     return <ResetPasswordScreen />;
   }
 
+  const isAdmin = currentUser?.role === 'admin';
+  const isRtl = language === 'ar';
+
+  // Ensure non-admin users cannot land on admin-only tabs via direct URL or state manipulation
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'dashboard' || activeTab === 'users')) {
+      setActiveTab('library');
+    }
+  }, [isAdmin, activeTab]);
+
   if (!currentUser) {
     return (
       <AuthScreen
@@ -743,16 +753,6 @@ const App: React.FC = () => {
       />
     );
   }
-
-  const isAdmin = currentUser.role === 'admin';
-  const isRtl = language === 'ar';
-
-  // Ensure non-admin users cannot land on admin-only tabs via direct URL or state manipulation
-  useEffect(() => {
-    if (!isAdmin && (activeTab === 'dashboard' || activeTab === 'users')) {
-      setActiveTab('library');
-    }
-  }, [isAdmin, activeTab]);
 
   // --- Dashboard Insights (Admin) ---
   const totalItems = videos.length;
