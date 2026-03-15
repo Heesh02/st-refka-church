@@ -168,7 +168,10 @@ export const TRANSLATIONS = {
     alreadyHaveAccount: 'Already have an account?',
     signUp: 'Sign up',
     signInLink: 'Sign in',
-    registrationSuccess: 'Registration successful. Please check your email to confirm your address, then sign in.'
+    registrationSuccess: 'Registration successful. Please check your email to confirm your address, then sign in.',
+    // Google Auth
+    continueWithGoogle: 'Continue with Google',
+    orContinueWith: 'or continue with'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -284,6 +287,9 @@ export const TRANSLATIONS = {
     alreadyHaveAccount: 'لديك حساب بالفعل؟',
     signUp: 'سجل الآن',
     signInLink: 'تسجيل الدخول',
-    registrationSuccess: 'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد عنوانك، ثم سجل الدخول.'
+    registrationSuccess: 'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد عنوانك، ثم سجل الدخول.',
+    // Google Auth
+    continueWithGoogle: 'المتابعة مع Google',
+    orContinueWith: 'أو المتابعة بـ'
   }
 };

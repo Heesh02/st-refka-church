@@ -137,6 +137,53 @@ const App: React.FC = () => {
     };
 
     void initAuth();
+
+    // Listen for auth state changes (handles Google OAuth redirect)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        const authUser = session.user;
+        let { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, role, phone')
+          .eq('id', authUser.id)
+          .maybeSingle();
+
+        // If profile doesn't exist (first-time Google sign-in), create it
+        if (!profile) {
+          const fullName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'User';
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .upsert({
+              id: authUser.id,
+              full_name: fullName,
+              role: 'user',
+              phone: authUser.user_metadata?.phone || authUser.phone || null,
+            })
+            .select('full_name, role, phone')
+            .single();
+
+          if (newProfile) {
+            profile = newProfile;
+          }
+        }
+
+        const userObj: User = {
+          id: authUser.id,
+          email: authUser.email || '',
+          phone: profile?.phone || authUser.user_metadata?.phone || authUser.phone || '',
+          name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'User',
+          role: (profile?.role as User['role']) || 'user',
+        };
+
+        setCurrentUser(userObj);
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // --- Load media from Supabase ---
@@ -487,6 +534,19 @@ const App: React.FC = () => {
     setActiveTab('library'); // Reset tab
   };
 
+  const handleGoogleSignIn = async (): Promise<string | null> => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      return error.message;
+    }
+    return null;
+  };
+
   // --- App Logic ---
 
   // Save favorites to localStorage
@@ -749,6 +809,7 @@ const App: React.FC = () => {
         onLogin={handleLogin}
         onRegister={handleRegister}
         onForgotPassword={handleForgotPassword}
+        onGoogleSignIn={handleGoogleSignIn}
         translations={t}
       />
     );
@@ -763,18 +824,18 @@ const App: React.FC = () => {
 
   const mostViewedVideo = totalItems
     ? videos.reduce<Video | null>(
-        (top, video) => {
-          if (!top) return video;
-          return video.views > top.views ? video : top;
-        },
-        null
-      )
+      (top, video) => {
+        if (!top) return video;
+        return video.views > top.views ? video : top;
+      },
+      null
+    )
     : null;
 
   const recentVideos = totalItems
     ? [...videos]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 3)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3)
     : [];
 
   const categoryCounts = CATEGORIES.filter((c) => c !== 'All').map((category) => ({
@@ -809,9 +870,8 @@ const App: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: isRtl ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`fixed top-0 h-full w-72 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 z-50 md:hidden overflow-y-auto ${
-                isRtl ? 'right-0 border-l' : 'left-0 border-r'
-              }`}
+              className={`fixed top-0 h-full w-72 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 z-50 md:hidden overflow-y-auto ${isRtl ? 'right-0 border-l' : 'left-0 border-r'
+                }`}
             >
               <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
                 <div className="flex items-center gap-3">
