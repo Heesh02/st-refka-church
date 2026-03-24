@@ -473,6 +473,24 @@ const App: React.FC = () => {
   };
 
   const handleRegister = async (email: string, pass: string, name: string, phone: string): Promise<string | null> => {
+    const mapPasswordPolicyError = (errorMessage?: string): string | null => {
+      if (!errorMessage) return null;
+      const normalized = errorMessage.toLowerCase();
+      if (normalized.includes('weakpassworderror') || normalized.includes('password')) {
+        if (normalized.includes('at least') && normalized.includes('8')) {
+          return t.passwordTooShort;
+        }
+        if (
+          normalized.includes('number') ||
+          normalized.includes('digit') ||
+          normalized.includes('numeric')
+        ) {
+          return t.passwordNeedsNumber;
+        }
+      }
+      return null;
+    };
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password: pass,
@@ -486,7 +504,7 @@ const App: React.FC = () => {
     });
 
     if (error || !data.user) {
-      return error?.message || 'Unable to register user';
+      return mapPasswordPolicyError(error?.message) || error?.message || 'Unable to register user';
     }
 
     const authUser = data.user;

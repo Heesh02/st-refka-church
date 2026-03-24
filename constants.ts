@@ -171,7 +171,9 @@ export const TRANSLATIONS = {
     registrationSuccess: 'Registration successful. Please check your email to confirm your address, then sign in.',
     // Google Auth
     continueWithGoogle: 'Continue with Google',
-    orContinueWith: 'or continue with'
+    orContinueWith: 'or continue with',
+    passwordTooShort: 'Password must be at least 8 characters',
+    passwordNeedsNumber: 'Password must include at least one number'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -290,6 +292,8 @@ export const TRANSLATIONS = {
     registrationSuccess: 'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد عنوانك، ثم سجل الدخول.',
     // Google Auth
     continueWithGoogle: 'المتابعة مع Google',
-    orContinueWith: 'أو المتابعة بـ'
+    orContinueWith: 'أو المتابعة بـ',
+    passwordTooShort: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
+    passwordNeedsNumber: 'يجب أن تحتوي كلمة المرور على رقم واحد على الأقل'
   }
 };

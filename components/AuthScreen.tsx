@@ -26,6 +26,8 @@ interface AuthScreenProps {
     enterPhone: string;
     continueWithGoogle: string;
     orContinueWith: string;
+    passwordTooShort: string;
+    passwordNeedsNumber: string;
   };
 }
 
@@ -42,6 +44,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const validatePassword = (value: string): string | null => {
+    if (value.length < 8) {
+      return t.passwordTooShort;
+    }
+    if (!/\d/.test(value)) {
+      return t.passwordNeedsNumber;
+    }
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +69,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
         const identifier = loginMethod === 'email' ? email : phone;
         resultError = await onLogin(identifier, password, loginMethod);
       } else {
+        const validationError = validatePassword(password);
+        if (validationError) {
+          setPasswordError(validationError);
+          setIsError(true);
+          setMessage(null);
+          return;
+        }
+        setPasswordError(null);
         resultError = await onRegister(email, password, name, phone);
       }
 
@@ -104,6 +125,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
     setName('');
     setPhone('');
     setLoginMethod('email');
+    setPasswordError(null);
   };
 
   return (
@@ -248,12 +270,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  setPassword(nextValue);
+                  if (!isLogin) {
+                    setPasswordError(validatePassword(nextValue));
+                  }
+                }}
                 required
                 className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                 placeholder="••••••••"
               />
             </div>
+            {!isLogin && passwordError && (
+              <p className="text-xs text-red-400 ml-1">{passwordError}</p>
+            )}
             {isLogin && loginMethod === 'email' && (
               <div className="flex justify-end">
                 <button
