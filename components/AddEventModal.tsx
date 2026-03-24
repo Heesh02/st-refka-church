@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 interface AddEventModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (event: { title: string; eventDate: string }) => void;
+    onAdd: (event: { title: string; eventDate: string }) => void | Promise<void>;
     translations: {
         addNewEvent: string;
         eventName: string;
@@ -71,6 +71,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, o
                         <input
                             type="text"
                             required
+                            maxLength={200}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder={t.eventNamePlaceholder}

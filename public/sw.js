@@ -1,68 +1,65 @@
-const CACHE_NAME = 'st-refka-media-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/index.css',
-  '/st-refka.png',
-  '/Cairo-VariableFont_slnt,wght.ttf'
-];
+const swUrl = new URL(self.location.href);
+const cacheVersion = swUrl.searchParams.get('v') || 'dev';
+const CACHE_NAME = `st-refka-media-${cacheVersion}`;
 
-// Install event - cache static assets
+const STATIC_ASSETS = ['/', '/index.html', '/st-refka.png', '/Cairo-VariableFont_slnt,wght.ttf'];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
+    caches.keys().then((cacheNames) =>
+      Promise.all(cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name)))
+    )
   );
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
-self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+const isHtmlOrApiRequest = (request) => {
+  const destination = request.destination;
+  if (destination === 'document') return true;
+  const url = new URL(request.url);
+  return url.pathname.startsWith('/auth/') || url.pathname.startsWith('/rest/') || url.pathname.startsWith('/functions/');
+};
 
-  // Skip external requests (like YouTube, Supabase, etc.)
+const networkFirst = async (request) => {
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached || caches.match('/');
+  }
+};
+
+const cacheFirst = async (request) => {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response && response.status === 200) {
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(request, response.clone());
+  }
+  return response;
+};
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith(self.location.origin)) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+  if (isHtmlOrApiRequest(event.request)) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
 
-      return fetch(event.request).then((networkResponse) => {
-        // Don't cache if not a valid response
-        if (!networkResponse || networkResponse.status !== 200) {
-          return networkResponse;
-        }
-
-        // Clone and cache the response
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return networkResponse;
-      });
-    }).catch(() => {
-      // Return offline page if available
-      return caches.match('/');
-    })
-  );
+  event.respondWith(cacheFirst(event.request));
 });
