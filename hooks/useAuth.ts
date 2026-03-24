@@ -13,15 +13,18 @@ export const useAuth = (options: UseAuthOptions) => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
+    let didFinish = false;
+
     const initAuth = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
+        if (didFinish) return; // Timeout already fired
         if (error) {
           console.error('Error fetching session', error);
-          // Clear any stale session state
-          await supabase.auth.signOut();
+          await supabase.auth.signOut().catch(() => {});
           setCurrentUser(null);
           setIsAuthChecking(false);
+          didFinish = true;
           return;
         }
 
@@ -44,25 +47,39 @@ export const useAuth = (options: UseAuthOptions) => {
               if (newProfile) profile = newProfile;
             }
 
-            setCurrentUser({
-              id: authUser.id,
-              email: authUser.email || '',
-              name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email || 'User',
-              role: (profile?.role as User['role']) || 'user',
-            });
+            if (!didFinish) {
+              setCurrentUser({
+                id: authUser.id,
+                email: authUser.email || '',
+                name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email || 'User',
+                role: (profile?.role as User['role']) || 'user',
+              });
+            }
           } catch (profileError) {
             console.error('Error fetching profile, signing out:', profileError);
-            await supabase.auth.signOut();
-            setCurrentUser(null);
+            await supabase.auth.signOut().catch(() => {});
+            if (!didFinish) setCurrentUser(null);
           }
         }
       } catch (err) {
         console.error('Unexpected auth error:', err);
-        setCurrentUser(null);
+        if (!didFinish) setCurrentUser(null);
       } finally {
-        setIsAuthChecking(false);
+        if (!didFinish) {
+          didFinish = true;
+          setIsAuthChecking(false);
+        }
       }
     };
+
+    // Safety: if auth takes longer than 5 seconds, stop loading and show login
+    const timeout = setTimeout(() => {
+      if (!didFinish) {
+        console.warn('Auth initialization timed out after 5s');
+        didFinish = true;
+        setIsAuthChecking(false);
+      }
+    }, 5000);
 
     void initAuth();
 
@@ -109,7 +126,10 @@ export const useAuth = (options: UseAuthOptions) => {
       setIsAuthChecking(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = async (identifier: string, pass: string, method: 'email' | 'phone'): Promise<string | null> => {
