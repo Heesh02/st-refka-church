@@ -30,36 +30,27 @@ const isHtmlOrApiRequest = (request) => {
 const networkFirst = async (request) => {
   try {
     const response = await fetch(request);
-    if (response && response.status === 200) {
+    if (response && response.status === 200 && request.method === 'GET') {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
     return response;
-  } catch {
+  } catch (error) {
     const cached = await caches.match(request);
-    return cached || caches.match('/');
+    if (cached) return cached;
+    if (request.destination === 'document' || request.mode === 'navigate') {
+      return caches.match('/');
+    }
+    throw error;
   }
-};
-
-const cacheFirst = async (request) => {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response && response.status === 200) {
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
-  }
-  return response;
 };
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  if (!event.request.url.startsWith(self.location.origin) && !event.request.url.includes('fonts.googleapis.com')) return;
 
-  if (isHtmlOrApiRequest(event.request)) {
-    event.respondWith(networkFirst(event.request));
-    return;
-  }
-
-  event.respondWith(cacheFirst(event.request));
+  // Use Network-First for everything! 
+  // This guarantees you always see the latest changes when online,
+  // but still works entirely from cache when offline.
+  event.respondWith(networkFirst(event.request));
 });
