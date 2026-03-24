@@ -14,40 +14,54 @@ export const useAuth = (options: UseAuthOptions) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Error fetching session', error);
-        setIsAuthChecking(false);
-        return;
-      }
-
-      if (data.session?.user) {
-        const authUser = data.session.user;
-        let { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, role')
-          .eq('id', authUser.id)
-          .maybeSingle();
-
-        if (!profile) {
-          const fullName = authUser.user_metadata?.full_name || authUser.email || 'User';
-          const { data: newProfile } = await supabase
-            .from('profiles')
-            .upsert({ id: authUser.id, full_name: fullName, role: 'user' })
-            .select('full_name, role')
-            .single();
-          if (newProfile) profile = newProfile;
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error fetching session', error);
+          // Clear any stale session state
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+          setIsAuthChecking(false);
+          return;
         }
 
-        setCurrentUser({
-          id: authUser.id,
-          email: authUser.email || '',
-          name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email || 'User',
-          role: (profile?.role as User['role']) || 'user',
-        });
-      }
+        if (data.session?.user) {
+          const authUser = data.session.user;
+          try {
+            let { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, role')
+              .eq('id', authUser.id)
+              .maybeSingle();
 
-      setIsAuthChecking(false);
+            if (!profile) {
+              const fullName = authUser.user_metadata?.full_name || authUser.email || 'User';
+              const { data: newProfile } = await supabase
+                .from('profiles')
+                .upsert({ id: authUser.id, full_name: fullName, role: 'user' })
+                .select('full_name, role')
+                .single();
+              if (newProfile) profile = newProfile;
+            }
+
+            setCurrentUser({
+              id: authUser.id,
+              email: authUser.email || '',
+              name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email || 'User',
+              role: (profile?.role as User['role']) || 'user',
+            });
+          } catch (profileError) {
+            console.error('Error fetching profile, signing out:', profileError);
+            await supabase.auth.signOut();
+            setCurrentUser(null);
+          }
+        }
+      } catch (err) {
+        console.error('Unexpected auth error:', err);
+        setCurrentUser(null);
+      } finally {
+        setIsAuthChecking(false);
+      }
     };
 
     void initAuth();
@@ -55,37 +69,44 @@ export const useAuth = (options: UseAuthOptions) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
         const authUser = session.user;
-        let { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, role, phone')
-          .eq('id', authUser.id)
-          .maybeSingle();
-
-        if (!profile) {
-          const fullName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'User';
-          const { data: newProfile } = await supabase
+        try {
+          let { data: profile } = await supabase
             .from('profiles')
-            .upsert({
-              id: authUser.id,
-              full_name: fullName,
-              role: 'user',
-              phone: authUser.user_metadata?.phone || authUser.phone || null,
-            })
             .select('full_name, role, phone')
-            .single();
-          if (newProfile) profile = newProfile;
-        }
+            .eq('id', authUser.id)
+            .maybeSingle();
 
-        setCurrentUser({
-          id: authUser.id,
-          email: authUser.email || '',
-          phone: profile?.phone || authUser.user_metadata?.phone || authUser.phone || '',
-          name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'User',
-          role: (profile?.role as User['role']) || 'user',
-        });
+          if (!profile) {
+            const fullName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'User';
+            const { data: newProfile } = await supabase
+              .from('profiles')
+              .upsert({
+                id: authUser.id,
+                full_name: fullName,
+                role: 'user',
+                phone: authUser.user_metadata?.phone || authUser.phone || null,
+              })
+              .select('full_name, role, phone')
+              .single();
+            if (newProfile) profile = newProfile;
+          }
+
+          setCurrentUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            phone: profile?.phone || authUser.user_metadata?.phone || authUser.phone || '',
+            name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'User',
+            role: (profile?.role as User['role']) || 'user',
+          });
+        } catch (profileError) {
+          console.error('Error fetching profile on auth change:', profileError);
+        }
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
       }
+
+      // Always ensure we're not stuck loading after any auth event
+      setIsAuthChecking(false);
     });
 
     return () => subscription.unsubscribe();
