@@ -1,5 +1,7 @@
+import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -11,8 +13,20 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </BrowserRouter>
   </React.StrictMode>
 );
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swUrl = `/sw.js?v=${__APP_BUILD_TS__}`;
+    navigator.serviceWorker
+      .register(swUrl)
+      .then((reg) => console.log('Service Worker registered:', reg.scope))
+      .catch((err) => console.log('Service Worker registration failed:', err));
+  });
+}

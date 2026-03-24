@@ -6,7 +6,7 @@ import { Video, CATEGORIES, Category } from '../types';
 interface AddVideoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (video: Omit<Video, 'id' | 'createdAt' | 'views'>) => void;
+  onAdd: (video: Omit<Video, 'id' | 'createdAt' | 'views'>) => void | Promise<void>;
   translations: {
     addNewContent: string;
     youtubeUrl: string;
@@ -130,6 +130,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
             <input
               type="text"
               required
+              maxLength={200}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t.videoTitlePlaceholder}
@@ -162,6 +163,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({ isOpen, onClose, o
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t.description}</label>
             <textarea
               value={description}
+              maxLength={1000}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t.descriptionPlaceholder}
               className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all h-24 resize-none"
