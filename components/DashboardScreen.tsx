@@ -14,7 +14,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ videos, transl
   const totalComments = videos.reduce((acc, curr) => acc + (curr.commentsCount || 0), 0);
   const avgViewsPerItem = totalItems ? Math.round(totalViews / totalItems) : 0;
   const mostViewedVideo = totalItems
-    ? videos.reduce<Video | null>((top, video) => (!top || video.views > top.views ? video : top), null)
+    ? videos.reduce((top, video) => (!top || video.views > top.views ? video : top), null as Video | null)
     : null;
   const recentVideos = [...videos]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
