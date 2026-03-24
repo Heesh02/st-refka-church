@@ -40,10 +40,7 @@ const App: React.FC = () => {
   const [commentVideo, setCommentVideo] = useState<Video | null>(null);
 
   // Church Events State
-  const [events, setEvents] = useState<ChurchEvent[]>(() => {
-    const saved = localStorage.getItem('churchEvents');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [events, setEvents] = useState<ChurchEvent[]>([]);
 
   // Notification States
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
@@ -58,10 +55,7 @@ const App: React.FC = () => {
   const videosPerPage = 12;
 
   // Favorites
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('favoriteVideos');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   // Get Translations
   const t = TRANSLATIONS[language];
@@ -190,52 +184,17 @@ const App: React.FC = () => {
   const loadMedia = async () => {
     if (!currentUser) return;
 
-    const { data, error } = await supabase
-      .from('media_items')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.rpc('load_media_with_stats', {
+      p_user_id: currentUser.id,
+    });
 
     if (error) {
       // eslint-disable-next-line no-console
-      console.error('Error loading media items', error);
+      console.error('Error loading media items via RPC', error);
       // Fallback to dummy data for local/demo usage
       setVideos(DUMMY_VIDEOS);
       return;
     }
-
-    // Fetch likes and comments counts for each video
-    const videoIds = data?.map((item: any) => item.id) ?? [];
-
-    // Get likes counts and user's liked videos
-    const { data: likesData } = await supabase
-      .from('video_likes')
-      .select('video_id')
-      .in('video_id', videoIds);
-
-    const { data: userLikes } = await supabase
-      .from('video_likes')
-      .select('video_id')
-      .eq('user_id', currentUser.id)
-      .in('video_id', videoIds);
-
-    // Get comments counts
-    const { data: commentsData } = await supabase
-      .from('video_comments')
-      .select('video_id')
-      .in('video_id', videoIds);
-
-    // Count likes and comments per video
-    const likesCountMap = new Map<string, number>();
-    const commentsCountMap = new Map<string, number>();
-    const userLikedSet = new Set(userLikes?.map((l) => l.video_id) ?? []);
-
-    likesData?.forEach((like) => {
-      likesCountMap.set(like.video_id, (likesCountMap.get(like.video_id) || 0) + 1);
-    });
-
-    commentsData?.forEach((comment) => {
-      commentsCountMap.set(comment.video_id, (commentsCountMap.get(comment.video_id) || 0) + 1);
-    });
 
     const mapped: Video[] =
       data?.map((item: any) => ({
@@ -246,9 +205,9 @@ const App: React.FC = () => {
         category: item.category,
         thumbnail: item.thumbnail_url || '',
         views: item.views ?? 0,
-        likesCount: likesCountMap.get(item.id) || 0,
-        commentsCount: commentsCountMap.get(item.id) || 0,
-        isLiked: userLikedSet.has(item.id),
+        likesCount: item.likes_count ?? 0,
+        commentsCount: item.comments_count ?? 0,
+        isLiked: item.is_liked ?? false,
         createdAt: item.created_at,
       })) ?? [];
 
@@ -567,38 +526,131 @@ const App: React.FC = () => {
 
   // --- App Logic ---
 
-  // Save favorites to localStorage
+  // Load favorites from Supabase
   useEffect(() => {
-    localStorage.setItem('favoriteVideos', JSON.stringify(favoriteIds));
-  }, [favoriteIds]);
+    const loadFavorites = async () => {
+      if (!currentUser) {
+        setFavoriteIds([]);
+        return;
+      }
 
-  // Save events to localStorage
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('video_id')
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error loading favorites', error);
+        return;
+      }
+
+      setFavoriteIds((data ?? []).map((row: { video_id: string }) => row.video_id));
+    };
+
+    void loadFavorites();
+  }, [currentUser]);
+
+  // Load church events from Supabase
   useEffect(() => {
-    localStorage.setItem('churchEvents', JSON.stringify(events));
-  }, [events]);
+    const loadEvents = async () => {
+      if (!currentUser) {
+        setEvents([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('church_events')
+        .select('id, title, event_date, created_at')
+        .order('event_date', { ascending: true });
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error loading events', error);
+        return;
+      }
+
+      const mapped: ChurchEvent[] = (data ?? []).map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        eventDate: row.event_date,
+        createdAt: row.created_at,
+      }));
+      setEvents(mapped);
+    };
+
+    void loadEvents();
+  }, [currentUser]);
 
   // Toggle favorite
-  const handleToggleFavorite = (videoId: string) => {
-    setFavoriteIds(prev =>
-      prev.includes(videoId)
-        ? prev.filter(id => id !== videoId)
-        : [...prev, videoId]
-    );
+  const handleToggleFavorite = async (videoId: string) => {
+    if (!currentUser) return;
+
+    const isFavorite = favoriteIds.includes(videoId);
+    if (isFavorite) {
+      const { error } = await supabase
+        .from('user_favorites')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('video_id', videoId);
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error removing favorite', error);
+        return;
+      }
+      setFavoriteIds((prev) => prev.filter((id) => id !== videoId));
+      return;
+    }
+
+    const { error } = await supabase.from('user_favorites').insert({
+      user_id: currentUser.id,
+      video_id: videoId,
+    });
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error adding favorite', error);
+      return;
+    }
+    setFavoriteIds((prev) => [...prev, videoId]);
   };
 
   // --- Church Events Handlers ---
-  const handleAddEvent = (eventData: { title: string; eventDate: string }) => {
+  const handleAddEvent = async (eventData: { title: string; eventDate: string }) => {
+    if (!currentUser) return;
+
+    const { data, error } = await supabase
+      .from('church_events')
+      .insert({
+        title: eventData.title,
+        event_date: eventData.eventDate,
+        created_by: currentUser.id,
+      })
+      .select('id, title, event_date, created_at')
+      .single();
+
+    if (error || !data) {
+      // eslint-disable-next-line no-console
+      console.error('Error adding event', error);
+      return;
+    }
+
     const newEvent: ChurchEvent = {
-      id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      title: eventData.title,
-      eventDate: eventData.eventDate,
-      createdAt: new Date().toISOString(),
+      id: data.id,
+      title: data.title,
+      eventDate: data.event_date,
+      createdAt: data.created_at,
     };
-    setEvents(prev => [...prev, newEvent]);
+    setEvents((prev) => [...prev, newEvent]);
   };
 
-  const handleDeleteEvent = (id: string) => {
-    setEvents(prev => prev.filter(e => e.id !== id));
+  const handleDeleteEvent = async (id: string) => {
+    const { error } = await supabase.from('church_events').delete().eq('id', id);
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error deleting event', error);
+      return;
+    }
+    setEvents((prev) => prev.filter((e) => e.id !== id));
   };
 
   // Reset page when filters change
