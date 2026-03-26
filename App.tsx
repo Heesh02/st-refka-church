@@ -169,6 +169,8 @@ const AppShell: React.FC = () => {
         onForgotPassword={handleForgotPassword}
         onGoogleSignIn={handleGoogleSignIn}
         translations={t}
+        language={language}
+        onLanguageChange={setLanguage}
       />
     );
   }

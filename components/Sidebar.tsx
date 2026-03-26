@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Video, BookOpen, Calendar, Settings, LogOut, Users, Heart } from 'lucide-react';
+import { LayoutGrid, Video, BookOpen, Calendar, Settings, LogOut, Users, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { User } from '../types';
 
@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user,
   const menuItems = [
     ...(isAdmin ? [{ id: 'dashboard', icon: LayoutGrid, label: t.dashboard }] : []),
     { id: 'library', icon: Video, label: t.mediaLibrary },
-    { id: 'favorites', icon: Heart, label: t.favorites },
+    { id: 'favorites', icon: Bookmark, label: t.favorites },
     { id: 'studies', icon: BookOpen, label: t.bibleStudies },
     { id: 'events', icon: Calendar, label: t.churchEvents },
     ...(isAdmin ? [{ id: 'users', icon: Users, label: t.users }] : []),

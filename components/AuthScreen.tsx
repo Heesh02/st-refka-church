@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2, Phone } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, Phone, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface AuthScreenProps {
@@ -35,10 +35,12 @@ interface AuthScreenProps {
     invalidPhone: string;
     confirmPassword: string;
   };
+  language: string;
+  onLanguageChange: (lang: any) => void;
 }
 import { PasswordFeedback } from './PasswordFeedback';
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onForgotPassword, onGoogleSignIn, translations: t }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onForgotPassword, onGoogleSignIn, translations: t, language, onLanguageChange }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -154,6 +156,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Language Toggle */}
+      <div className="absolute top-6 ltr:right-6 rtl:left-6 z-50">
+        <button
+          onClick={() => onLanguageChange(language === 'en' ? 'ar' : 'en')}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 rounded-xl text-sm font-medium text-zinc-300 hover:text-white transition-all backdrop-blur-xl shadow-lg"
+        >
+          <Globe size={16} />
+          {language === 'en' ? 'العربية' : 'English'}
+        </button>
+      </div>
+
       {/* Background Decoration */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <motion.div
