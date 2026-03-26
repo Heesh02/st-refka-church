@@ -118,7 +118,13 @@ export const TRANSLATIONS = {
     continueWithGoogle: 'Continue with Google',
     orContinueWith: 'or continue with',
     passwordTooShort: 'Password must be at least 8 characters',
-    passwordNeedsNumber: 'Password must include at least one number'
+    passwordNeedsNumber: 'Password must include at least one number',
+    min8Chars: 'At least 8 characters',
+    letterAndNumber: 'At least one letter and one number',
+    passwordsMatch: 'Passwords match',
+    passwordsDoNotMatch: 'Passwords do not match',
+    invalidPhone: 'Please enter a valid Egyptian mobile number',
+    confirmPassword: 'Confirm Password'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -239,6 +245,12 @@ export const TRANSLATIONS = {
     continueWithGoogle: 'المتابعة مع Google',
     orContinueWith: 'أو المتابعة بـ',
     passwordTooShort: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
-    passwordNeedsNumber: 'يجب أن تحتوي كلمة المرور على رقم واحد على الأقل'
+    passwordNeedsNumber: 'يجب أن تحتوي كلمة المرور على رقم واحد على الأقل',
+    min8Chars: '8 أحرف على الأقل',
+    letterAndNumber: 'حرف واحد ورقم واحد على الأقل',
+    passwordsMatch: 'كلمات المرور متطابقة',
+    passwordsDoNotMatch: 'كلمات المرور غير متطابقة',
+    invalidPhone: 'يرجى إدخال رقم هاتف محمول مصري صحيح',
+    confirmPassword: 'تأكيد كلمة المرور'
   }
 };

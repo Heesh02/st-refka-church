@@ -28,8 +28,15 @@ interface AuthScreenProps {
     orContinueWith: string;
     passwordTooShort: string;
     passwordNeedsNumber: string;
+    min8Chars: string;
+    letterAndNumber: string;
+    passwordsMatch: string;
+    passwordsDoNotMatch: string;
+    invalidPhone: string;
+    confirmPassword: string;
   };
 }
+import { PasswordFeedback } from './PasswordFeedback';
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onForgotPassword, onGoogleSignIn, translations: t }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -43,6 +50,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -76,6 +84,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
           setMessage(null);
           return;
         }
+
+        if (password !== confirmPassword) {
+          setPasswordError(t.passwordsDoNotMatch);
+          setIsError(true);
+          setMessage(null);
+          return;
+        }
+
+        const phoneRegex = /^01[0125][0-9]{8}$/;
+        if (!phoneRegex.test(phone)) {
+          setIsError(true);
+          setMessage(t.invalidPhone);
+          return;
+        }
+
         setPasswordError(null);
         resultError = await onRegister(email, password, name, phone);
       }
@@ -122,6 +145,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
     setMessage(null);
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setName('');
     setPhone('');
     setLoginMethod('email');
@@ -282,9 +306,43 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
                 placeholder="••••••••"
               />
             </div>
-            {!isLogin && passwordError && (
+            
+            {!isLogin && (
+              <PasswordFeedback 
+                password={password} 
+                confirmPassword={confirmPassword} 
+                t={t} 
+                showMatch={true} 
+              />
+            )}
+            
+            {passwordError && (
               <p className="text-xs text-red-400 ml-1">{passwordError}</p>
             )}
+
+            {!isLogin && (
+              <div className="space-y-1.5 pt-2">
+                <label className="text-xs font-medium text-zinc-400 ml-1">{t.confirmPassword}</label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (passwordError === t.passwordsDoNotMatch && e.target.value === password) {
+                        setPasswordError(null);
+                        setIsError(false);
+                      }
+                    }}
+                    required
+                    className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+            )}
+
             {isLogin && loginMethod === 'email' && (
               <div className="flex justify-end">
                 <button

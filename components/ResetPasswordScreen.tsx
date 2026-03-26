@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import { TRANSLATIONS } from '../constants';
+import { PasswordFeedback } from './PasswordFeedback';
 
 export const ResetPasswordScreen: React.FC = () => {
   const [password, setPassword] = useState('');
@@ -10,6 +12,8 @@ export const ResetPasswordScreen: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  const t = TRANSLATIONS.en; // Default to English for standalone reset page
 
   // Handle password reset token from URL
   useEffect(() => {
@@ -119,9 +123,15 @@ export const ResetPasswordScreen: React.FC = () => {
     e.preventDefault();
     setMessage(null);
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setIsError(true);
-      setMessage('Password must be at least 6 characters.');
+      setMessage(t.passwordTooShort);
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      setIsError(true);
+      setMessage(t.passwordNeedsNumber);
       return;
     }
 
