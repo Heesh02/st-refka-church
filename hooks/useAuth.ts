@@ -21,10 +21,11 @@ export const useAuth = (options: UseAuthOptions) => {
         if (didFinish) return; // Timeout already fired
         if (error) {
           console.error('Error fetching session', error);
-          await supabase.auth.signOut().catch(() => {});
-          setCurrentUser(null);
-          setIsAuthChecking(false);
-          didFinish = true;
+          if (!didFinish) {
+            setCurrentUser(null);
+            setIsAuthChecking(false);
+            didFinish = true;
+          }
           return;
         }
 
@@ -56,8 +57,7 @@ export const useAuth = (options: UseAuthOptions) => {
               });
             }
           } catch (profileError) {
-            console.error('Error fetching profile, signing out:', profileError);
-            await supabase.auth.signOut().catch(() => {});
+            console.error('Error processing profile:', profileError);
             if (!didFinish) setCurrentUser(null);
           }
         }
@@ -79,7 +79,7 @@ export const useAuth = (options: UseAuthOptions) => {
         didFinish = true;
         setIsAuthChecking(false);
       }
-    }, 5000);
+    }, 15000);
 
     void initAuth();
 
