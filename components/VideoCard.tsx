@@ -1,6 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Eye, Trash2, Heart, MessageCircle, Share2, X, Bookmark } from 'lucide-react';
+import { Play, Eye, Trash2, Heart, MessageCircle, Share2, Bookmark, Link2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Video } from '../types';
+import { WhatsAppIcon, FacebookIcon, MessengerIcon, TelegramIcon } from './ShareIcons';
+
+const shareMenuVariants = {
+  hidden: { opacity: 0, scale: 0.92, y: 6 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 420,
+      damping: 28,
+      staggerChildren: 0.04,
+      delayChildren: 0.02,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    y: 4,
+    transition: { duration: 0.15, staggerChildren: 0.02, staggerDirection: -1 },
+  },
+};
+
+const shareItemVariants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.18 } },
+  exit: { opacity: 0, x: -4, transition: { duration: 0.1 } },
+};
 
 interface VideoCardProps {
   video: Video;
@@ -195,47 +225,89 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             <div className="relative" ref={shareMenuRef}>
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                  showShareMenu
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400'
+                }`}
+                aria-expanded={showShareMenu}
+                aria-haspopup="menu"
               >
-                <Share2 size={16} />
+                <Share2 size={16} className={showShareMenu ? 'scale-110 transition-transform duration-200' : ''} />
               </button>
 
-              {/* Share Dropdown Menu */}
-              {showShareMenu && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 py-2 min-w-[160px] z-50">
-                  <button
-                    onClick={shareToWhatsApp}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-3"
+              <AnimatePresence>
+                {showShareMenu && (
+                  <motion.div
+                    role="menu"
+                    variants={shareMenuVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="absolute bottom-full right-0 mb-2 origin-bottom-right bg-white dark:bg-zinc-800 rounded-xl shadow-xl shadow-black/10 dark:shadow-black/30 border border-zinc-200 dark:border-zinc-700 py-1.5 min-w-[172px] z-50 overflow-hidden"
                   >
-                    <span className="text-green-500">📱</span> WhatsApp
-                  </button>
-                  <button
-                    onClick={shareToFacebook}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-3"
-                  >
-                    <span className="text-blue-600">📘</span> Facebook
-                  </button>
-                  <button
-                    onClick={shareToMessenger}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-3"
-                  >
-                    <span className="text-blue-500">💬</span> Messenger
-                  </button>
-                  <button
-                    onClick={shareToTelegram}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-3"
-                  >
-                    <span className="text-blue-400">✈️</span> Telegram
-                  </button>
-                  <hr className="my-1 border-zinc-200 dark:border-zinc-700" />
-                  <button
-                    onClick={copyLink}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-3"
-                  >
-                    <span>🔗</span> Copy Link
-                  </button>
-                </div>
-              )}
+                    <motion.button
+                      role="menuitem"
+                      variants={shareItemVariants}
+                      onClick={shareToWhatsApp}
+                      className="w-full px-3 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 flex items-center gap-3 transition-colors"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#25D366]/10 text-[#25D366]">
+                        <WhatsAppIcon size={16} />
+                      </span>
+                      WhatsApp
+                    </motion.button>
+                    <motion.button
+                      role="menuitem"
+                      variants={shareItemVariants}
+                      onClick={shareToFacebook}
+                      className="w-full px-3 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 flex items-center gap-3 transition-colors"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1877F2]/10 text-[#1877F2]">
+                        <FacebookIcon size={16} />
+                      </span>
+                      Facebook
+                    </motion.button>
+                    <motion.button
+                      role="menuitem"
+                      variants={shareItemVariants}
+                      onClick={shareToMessenger}
+                      className="w-full px-3 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 flex items-center gap-3 transition-colors"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0084FF]/10 text-[#0084FF]">
+                        <MessengerIcon size={16} />
+                      </span>
+                      Messenger
+                    </motion.button>
+                    <motion.button
+                      role="menuitem"
+                      variants={shareItemVariants}
+                      onClick={shareToTelegram}
+                      className="w-full px-3 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 flex items-center gap-3 transition-colors"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#26A5E4]/10 text-[#26A5E4]">
+                        <TelegramIcon size={16} />
+                      </span>
+                      Telegram
+                    </motion.button>
+                    <motion.hr
+                      variants={shareItemVariants}
+                      className="my-1 border-zinc-200 dark:border-zinc-700"
+                    />
+                    <motion.button
+                      role="menuitem"
+                      variants={shareItemVariants}
+                      onClick={copyLink}
+                      className="w-full px-3 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 flex items-center gap-3 transition-colors"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-200/80 dark:bg-zinc-700/80 text-zinc-600 dark:text-zinc-300">
+                        <Link2 size={16} />
+                      </span>
+                      Copy Link
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
