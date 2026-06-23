@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { User } from '../types';
-import { supabase } from '../supabaseClient';
+import { getAuthRedirectUrl, supabase } from '../supabaseClient';
 
 interface UseAuthOptions {
   passwordTooShort: string;
@@ -152,7 +152,7 @@ export const useAuth = (options: UseAuthOptions) => {
       password: pass,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        emailRedirectTo: getAuthRedirectUrl('/auth/confirm'),
       },
     });
 
@@ -172,7 +172,7 @@ export const useAuth = (options: UseAuthOptions) => {
   const handleForgotPassword = async (email: string): Promise<string | null> => {
     if (!email) return 'Please enter your email first.';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getAuthRedirectUrl('/reset-password'),
     });
     return error ? error.message : null;
   };
@@ -185,7 +185,13 @@ export const useAuth = (options: UseAuthOptions) => {
   const handleGoogleSignIn = async (): Promise<string | null> => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: getAuthRedirectUrl('/auth/callback'),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
+        },
+      },
     });
     return error ? error.message : null;
   };

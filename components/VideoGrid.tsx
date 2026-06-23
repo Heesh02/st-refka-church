@@ -82,6 +82,7 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
             onComment={onComment}
             isFavorite={favoriteIds.includes(video.id)}
             onToggleFavorite={onToggleFavorite}
+            t={t}
           />
         ))}
       </div>

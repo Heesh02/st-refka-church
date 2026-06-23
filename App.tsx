@@ -7,6 +7,7 @@ import { AddVideoModal } from './components/AddVideoModal';
 import { AuthScreen } from './components/AuthScreen';
 import { CommentModal } from './components/CommentModal';
 import { DashboardScreen } from './components/DashboardScreen';
+import { AuthCallbackScreen } from './components/AuthCallbackScreen';
 import { EmailConfirmationScreen } from './components/EmailConfirmationScreen';
 import { EventCard } from './components/EventCard';
 import { MainLayout } from './components/MainLayout';
@@ -379,6 +380,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/reset-password" element={<ResetPasswordScreen />} />
+      <Route path="/auth/callback" element={<AuthCallbackScreen />} />
       <Route path="/auth/confirm" element={<EmailConfirmationScreen />} />
       <Route path="*" element={<AppShell />} />
     </Routes>
