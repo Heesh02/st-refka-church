@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 
 export const AuthCallbackScreen: React.FC = () => {
   const [message, setMessage] = useState('Completing sign in...');
+  const hasHandledCallback = useRef(false);
 
   useEffect(() => {
+    if (hasHandledCallback.current) return;
+    hasHandledCallback.current = true;
+
     const completeOAuthSignIn = async () => {
       try {
         const queryParams = new URLSearchParams(window.location.search);
