@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { User } from '../types';
-import { getAuthRedirectUrl, supabase } from '../supabaseClient';
+import { getAuthRedirectUrl, getSupabaseConfigError, supabase } from '../supabaseClient';
 
 interface UseAuthOptions {
   passwordTooShort: string;
@@ -183,7 +183,10 @@ export const useAuth = (options: UseAuthOptions) => {
   };
 
   const handleGoogleSignIn = async (): Promise<string | null> => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const configError = getSupabaseConfigError();
+    if (configError) return configError;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: getAuthRedirectUrl('/auth/callback'),
@@ -193,7 +196,12 @@ export const useAuth = (options: UseAuthOptions) => {
         },
       },
     });
-    return error ? error.message : null;
+
+    if (error) return error.message;
+    if (!data.url) return 'Could not start Google sign-in. Please try again.';
+
+    window.location.assign(data.url);
+    return null;
   };
 
   return {
