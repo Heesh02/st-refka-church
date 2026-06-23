@@ -7,12 +7,30 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+export const getSupabaseConfigError = (): string | null => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.';
+  }
+
+  try {
+    const parsed = new URL(supabaseUrl);
+    if (!parsed.hostname.endsWith('.supabase.co')) {
+      return (
+        'Invalid VITE_SUPABASE_URL. Use your Supabase project URL ' +
+        '(https://YOUR_REF.supabase.co), not your Vercel app URL.'
+      );
+    }
+  } catch {
+    return 'Invalid VITE_SUPABASE_URL format.';
+  }
+
+  return null;
+};
+
+const configError = getSupabaseConfigError();
+if (configError) {
   // eslint-disable-next-line no-console
-  console.warn(
-    '[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is not set. ' +
-      'Auth and remote content features will not work until these are configured.'
-  );
+  console.error(`[Supabase] ${configError}`);
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
@@ -24,7 +42,30 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   },
 });
 
-export const getAuthRedirectUrl = (path = '/auth/callback') =>
-  `${window.location.origin}${path}`;
+const normalizeSiteOrigin = (value: string): string => {
+  const trimmed = value.trim().replace(/\/$/, '');
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
+/** Public app origin used for Supabase OAuth/email redirects. */
+export const getSiteOrigin = (): string => {
+  const configured = import.meta.env.VITE_SITE_URL?.trim();
+  if (configured) {
+    return normalizeSiteOrigin(configured);
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return '';
+};
+
+export const getAuthRedirectUrl = (path = '/auth/callback'): string => {
+  const origin = getSiteOrigin();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${origin}${normalizedPath}`;
+};
 
 
