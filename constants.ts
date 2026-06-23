@@ -94,15 +94,10 @@ export const TRANSLATIONS = {
     noEvents: 'No events yet',
     noEventsDesc: 'Church events will appear here.',
     deleteEventConfirm: 'Are you sure you want to delete this event?',
-    // Phone Auth
+    // Auth
     email: 'Email',
-    phoneNumber: 'Phone Number',
-    phonePlaceholder: '+1234567890',
     loginWithEmail: 'Login with Email',
-    loginWithPhone: 'Login with Phone',
-    emailOrPhone: 'Email or Phone',
     enterEmail: 'Enter your email',
-    enterPhone: 'Enter your phone number',
     fullName: 'Full Name',
     emailAddress: 'Email Address',
     password: 'Password',
@@ -123,7 +118,6 @@ export const TRANSLATIONS = {
     letterAndNumber: 'At least one letter and one number',
     passwordsMatch: 'Passwords match',
     passwordsDoNotMatch: 'Passwords do not match',
-    invalidPhone: 'Please enter a valid Egyptian mobile number',
     confirmPassword: 'Confirm Password'
   },
   ar: {
@@ -221,15 +215,10 @@ export const TRANSLATIONS = {
     noEvents: 'لا توجد مناسبات بعد',
     noEventsDesc: 'ستظهر مناسبات الكنيسة هنا.',
     deleteEventConfirm: 'هل أنت متأكد أنك تريد حذف هذه المناسبة؟',
-    // Phone Auth
+    // Auth
     email: 'البريد الإلكتروني',
-    phoneNumber: 'رقم الهاتف',
-    phonePlaceholder: '+1234567890',
     loginWithEmail: 'تسجيل الدخول بالبريد',
-    loginWithPhone: 'تسجيل الدخول بالهاتف',
-    emailOrPhone: 'البريد أو الهاتف',
     enterEmail: 'أدخل بريدك الإلكتروني',
-    enterPhone: 'أدخل رقم هاتفك',
     fullName: 'الاسم الكامل',
     emailAddress: 'البريد الإلكتروني',
     password: 'كلمة المرور',
@@ -250,7 +239,6 @@ export const TRANSLATIONS = {
     letterAndNumber: 'حرف واحد ورقم واحد على الأقل',
     passwordsMatch: 'كلمات المرور متطابقة',
     passwordsDoNotMatch: 'كلمات المرور غير متطابقة',
-    invalidPhone: 'يرجى إدخال رقم هاتف محمول مصري صحيح',
     confirmPassword: 'تأكيد كلمة المرور'
   }
 };

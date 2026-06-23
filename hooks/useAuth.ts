@@ -132,14 +132,13 @@ export const useAuth = (options: UseAuthOptions) => {
     };
   }, []);
 
-  const handleLogin = async (identifier: string, pass: string, method: 'email' | 'phone'): Promise<string | null> => {
-    const credentials = method === 'email' ? { email: identifier, password: pass } : { phone: identifier, password: pass };
-    const { data, error } = await supabase.auth.signInWithPassword(credentials);
+  const handleLogin = async (email: string, pass: string): Promise<string | null> => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error || !data.user) return error?.message || 'Invalid credentials';
     return null;
   };
 
-  const handleRegister = async (email: string, pass: string, name: string, phone: string): Promise<string | null> => {
+  const handleRegister = async (email: string, pass: string, name: string): Promise<string | null> => {
     const mapPasswordPolicyError = (errorMessage?: string): string | null => {
       if (!errorMessage) return null;
       const normalized = errorMessage.toLowerCase();
@@ -152,7 +151,7 @@ export const useAuth = (options: UseAuthOptions) => {
       email,
       password: pass,
       options: {
-        data: { full_name: name, phone },
+        data: { full_name: name },
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
@@ -162,7 +161,7 @@ export const useAuth = (options: UseAuthOptions) => {
     }
 
     try {
-      await supabase.from('profiles').upsert({ id: data.user.id, full_name: name, phone, role: 'user' });
+      await supabase.from('profiles').upsert({ id: data.user.id, full_name: name, role: 'user' });
     } catch {
       // profile creation can happen on first login
     }

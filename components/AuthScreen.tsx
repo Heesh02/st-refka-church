@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2, Phone, Globe } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface AuthScreenProps {
-  onLogin: (identifier: string, pass: string, method: 'email' | 'phone') => Promise<string | null>;
-  onRegister: (email: string, pass: string, name: string, phone: string) => Promise<string | null>;
+  onLogin: (email: string, pass: string) => Promise<string | null>;
+  onRegister: (email: string, pass: string, name: string) => Promise<string | null>;
   onForgotPassword: (email: string) => Promise<string | null>;
   onGoogleSignIn: () => Promise<string | null>;
   translations: {
-    loginWithEmail: string;
-    loginWithPhone: string;
     fullName: string;
     emailAddress: string;
-    phoneNumber: string;
-    phonePlaceholder: string;
     password: string;
     signIn: string;
     createAccount: string;
@@ -23,7 +19,6 @@ interface AuthScreenProps {
     signUp: string;
     signInLink: string;
     enterEmail: string;
-    enterPhone: string;
     continueWithGoogle: string;
     orContinueWith: string;
     passwordTooShort: string;
@@ -32,7 +27,6 @@ interface AuthScreenProps {
     letterAndNumber: string;
     passwordsMatch: string;
     passwordsDoNotMatch: string;
-    invalidPhone: string;
     confirmPassword: string;
   };
   language: string;
@@ -46,11 +40,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
   // Form State
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
@@ -76,8 +68,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
     try {
       let resultError: string | null = null;
       if (isLogin) {
-        const identifier = loginMethod === 'email' ? email : phone;
-        resultError = await onLogin(identifier, password, loginMethod);
+        resultError = await onLogin(email, password);
       } else {
         const validationError = validatePassword(password);
         if (validationError) {
@@ -94,15 +85,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
           return;
         }
 
-        const phoneRegex = /^01[0125][0-9]{8}$/;
-        if (!phoneRegex.test(phone)) {
-          setIsError(true);
-          setMessage(t.invalidPhone);
-          return;
-        }
-
         setPasswordError(null);
-        resultError = await onRegister(email, password, name, phone);
+        resultError = await onRegister(email, password, name);
       }
 
       if (resultError) {
@@ -149,8 +133,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
     setPassword('');
     setConfirmPassword('');
     setName('');
-    setPhone('');
-    setLoginMethod('email');
     setPasswordError(null);
   };
 
@@ -211,34 +193,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
           </p>
         </div>
 
-        {/* Login Method Toggle — only for login mode */}
-        {isLogin && (
-          <div className="flex bg-zinc-950/50 border border-zinc-800 rounded-xl p-1 mb-6">
-            <button
-              type="button"
-              onClick={() => { setLoginMethod('email'); setMessage(null); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${loginMethod === 'email'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-zinc-400 hover:text-zinc-300'
-                }`}
-            >
-              <Mail size={16} />
-              {t.loginWithEmail}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginMethod('phone'); setMessage(null); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${loginMethod === 'phone'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-zinc-400 hover:text-zinc-300'
-                }`}
-            >
-              <Phone size={16} />
-              {t.loginWithPhone}
-            </button>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name — registration only */}
           {!isLogin && (
@@ -263,41 +217,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
             </motion.div>
           )}
 
-          {/* Email — always shown in registration, shown in login when method is email */}
-          {(!isLogin || loginMethod === 'email') && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-400 ml-1">{t.emailAddress}</label>
-              <div className="relative group">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required={!isLogin || loginMethod === 'email'}
-                  className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                  placeholder="name@example.com"
-                />
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-zinc-400 ml-1">{t.emailAddress}</label>
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                placeholder="name@example.com"
+              />
             </div>
-          )}
-
-          {/* Phone — always shown in registration (required), shown in login when method is phone */}
-          {(!isLogin || loginMethod === 'phone') && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-400 ml-1">{t.phoneNumber}</label>
-              <div className="relative group">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required={!isLogin || loginMethod === 'phone'}
-                  className="w-full bg-zinc-950/50 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                  placeholder={t.phonePlaceholder}
-                />
-              </div>
-            </div>
-          )}
+          </div>
 
           {/* Password */}
           <div className="space-y-1.5">
@@ -356,7 +289,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, onF
               </div>
             )}
 
-            {isLogin && loginMethod === 'email' && (
+            {isLogin && (
               <div className="flex justify-end">
                 <button
                   type="button"
