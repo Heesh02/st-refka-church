@@ -10,6 +10,9 @@ interface VideoCardProps {
   onComment?: (video: Video) => void;
   isFavorite?: boolean;
   onToggleFavorite?: (videoId: string) => void;
+  t: {
+    categories?: Record<string, string>;
+  };
 }
 
 export const VideoCard: React.FC<VideoCardProps> = ({
@@ -20,6 +23,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   onComment,
   isFavorite = false,
   onToggleFavorite,
+  t,
 }) => {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
@@ -89,6 +93,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     setShowShareMenu(false);
   };
 
+  const categoryLabel = t.categories?.[video.category] ?? video.category;
+
   return (
     <div className="group bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-400 ease-smooth hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/40 flex flex-col h-full">
       {/* Thumbnail */}
@@ -114,7 +120,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex justify-between items-start gap-2 mb-2">
           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
-            {video.category}
+            {categoryLabel}
           </span>
           <div className="flex items-center gap-1">
             {onToggleFavorite && (
